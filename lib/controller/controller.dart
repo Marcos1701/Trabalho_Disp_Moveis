@@ -11,6 +11,15 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: const MyHomePage());
+        home: const MyHomePage(),
+        // initialRoute: '/login',
+        routes: {
+          '/': (context) => const MyHomePage(),
+          // '/login': (context) => const LoginPage(),
+          // '/cadastro': (context) => const CadastroPage(),
+
+        },
+
+        );
   }
 }
