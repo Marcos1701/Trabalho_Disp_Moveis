@@ -126,6 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
               //     infoWindow: const InfoWindow(title: 'Localização Atual'),
               //   ),
               // },
+              // teste
             ),
           ),
         ],
