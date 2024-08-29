@@ -89,8 +89,43 @@ class _MyHomePageState extends State<MyHomePage> {
           Expanded(
             child: GoogleMap(
               onMapCreated: _onMapCreated,
-              initialCameraPosition:
-                  CameraPosition(target: _center, zoom: 11.0),
+              initialCameraPosition: CameraPosition(
+                target: _center,
+                zoom: 11.0,
+              ),
+              // para habilitar a localização atual
+              myLocationEnabled: true,
+              // para habilitar o botão de localização atual
+              myLocationButtonEnabled: true,
+              // para habilitar o controle de zoom
+              zoomControlsEnabled: true,
+              // para habilitar o controle de zoom
+              zoomGesturesEnabled: true,
+              // para habilitar o controle de rotação
+              rotateGesturesEnabled: true,
+              // para habilitar o controle de inclinação
+              tiltGesturesEnabled: true,
+              // melhorando a performance
+              // gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+              //   Factory<OneSequenceGestureRecognizer>(
+              //     () => EagerGestureRecognizer(),
+              //   ),
+              // },
+              // cacheando o mapa
+              mapType: MapType.normal,
+
+              // para habilitar o tráfego
+              // trafficEnabled: true,
+              // habilitando busca
+
+              // para adicionar o marcador na localização atual
+              // markers: <Marker>{
+              //   Marker(
+              //     markerId: const MarkerId('current-location'),
+              //     position: _center,
+              //     infoWindow: const InfoWindow(title: 'Localização Atual'),
+              //   ),
+              // },
             ),
           ),
         ],
