@@ -4,7 +4,7 @@
             "outputFile": "com.br.LocalizaAAIII.trabalho_loc_ai.app-mergeDebugResources-29:/values-ro/values-ro.xml",
             "map": [
                 {
-                    "source": "/workspace/.gradle/caches/transforms-3/131fa8745f37126c033a3c02345bf100/transformed/jetified-play-services-basement-18.3.0/res/values-ro/values.xml",
+                    "source": "/workspace/.gradle/caches/transforms-3/eaab88a4b8116195037bc89f38300c22/transformed/jetified-play-services-basement-18.3.0/res/values-ro/values.xml",
                     "from": {
                         "startLines": "4",
                         "startColumns": "0",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "/workspace/.gradle/caches/transforms-3/672304c6fd8289b5cf6684e65135d1da/transformed/core-1.13.1/res/values-ro/values-ro.xml",
+                    "source": "/workspace/.gradle/caches/transforms-3/f41476b6df1d004d92c59b9e1ffb379a/transformed/core-1.13.1/res/values-ro/values-ro.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -38,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "/workspace/.gradle/caches/transforms-3/be99861a19e1b287bff27476f3835ac2/transformed/jetified-play-services-base-18.3.0/res/values-ro/values.xml",
+                    "source": "/workspace/.gradle/caches/transforms-3/e6db6139495a9c77ca34c05a2d6bb7e8/transformed/jetified-play-services-base-18.3.0/res/values-ro/values.xml",
                     "from": {
                         "startLines": "4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20",
                         "startColumns": "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",

@@ -1,16 +1,16 @@
-#Thu Aug 29 13:38:01 UTC 2024
-path.4=13/classes.dex
-path.3=1/classes.dex
-path.2=0/classes.dex
-path.1=0/classes.dex
-path.0=classes.dex
-base.4=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/13/classes.dex
-base.3=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/1/classes.dex
-base.2=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
-base.1=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeLibDexDebug/0/classes.dex
+#Thu Aug 29 18:04:41 UTC 2024
 base.0=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeExtDexDebug/classes.dex
-renamed.3=classes4.dex
-renamed.2=classes3.dex
-renamed.1=classes2.dex
+base.1=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeLibDexDebug/0/classes.dex
+base.2=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
+base.3=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/1/classes.dex
+base.4=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/13/classes.dex
+path.0=classes.dex
+path.1=0/classes.dex
+path.2=0/classes.dex
+path.3=1/classes.dex
+path.4=13/classes.dex
 renamed.0=classes.dex
+renamed.1=classes2.dex
+renamed.2=classes3.dex
+renamed.3=classes4.dex
 renamed.4=classes5.dex
