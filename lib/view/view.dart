@@ -1,136 +1,117 @@
-import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
+import 'dart:async';
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/services.dart' show rootBundle;
+
+class LocationMap extends StatefulWidget {
+  const LocationMap({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<LocationMap> createState() => LocationMapState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  late GoogleMapController mapController;
-  late LatLng _center = const LatLng(-5.088337, -42.810645);
+class LocationMapState extends State<LocationMap>
+    with TickerProviderStateMixin {
+  final Completer<GoogleMapController> _controller =
+      Completer<GoogleMapController>();
 
-  // adicionando a busca de endereço
-  final TextEditingController _controller = TextEditingController();
-  late String _searchAddress;
+  final Set<Marker> _markers = {};
 
-  // adicionando a busca de endereço
-  void _onSearch() {}
+  String _mapStyle = '';
 
+  // metodo para inicializar o mapa
   void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
+    _controller.complete(controller);
   }
 
-  Future<void> getCurrentLocation() async {
-    final Position position = await _determinePosition();
-    mapController.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(position.latitude, position.longitude),
-          zoom: 11.0,
-        ),
-      ),
-    );
-
-    setState(() {
-      _center = LatLng(position.latitude, position.longitude);
-    });
-  }
-
-  Future<Position> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
+  // metodo para pedir permissão de localização, é utilizado apenas para exibir a localização no mapa
+  void requestPermission() async {
+    var status = await Geolocator.checkPermission();
+    if (status == LocationPermission.denied) {
+      status = await Geolocator.requestPermission();
     }
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
+    var permission = await Geolocator.isLocationServiceEnabled();
 
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
+    if (permission) {
+      // verifica se a permissão foi aceita
+      Position locAtual = await Geolocator.getCurrentPosition();
 
-    return await Geolocator.getCurrentPosition();
+      setState(() {
+        _controller.future.then((GoogleMapController controller) {
+          controller.animateCamera(CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: LatLng(locAtual.latitude, locAtual.longitude),
+              zoom: 18,
+            ),
+          ));
+        });
+      });
+    }
+    return;
   }
 
   @override
   void initState() {
     super.initState();
-    getCurrentLocation();
+    requestPermission();
+
+    // carrega o arquivo de estilo do mapa
+    setState(() {
+      rootBundle.loadString('assets/map_style.txt').then((string) {
+        _mapStyle = string;
+      });
+    });
   }
+
+  // Metodo responsável por carregar as localizações e os marcadores dos restaurantes
+  loadData() async {}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flutter Google Maps'),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _onSearch,
-          ),
-        ],
+        body: GoogleMap(
+      onMapCreated: _onMapCreated,
+      initialCameraPosition: const CameraPosition(
+        target: LatLng(-20.508, -54.617),
+        zoom: 18,
       ),
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _center,
-                zoom: 11.0,
-              ),
-              // para habilitar a localização atual
-              myLocationEnabled: true,
-              // para habilitar o botão de localização atual
-              myLocationButtonEnabled: true,
-              // para habilitar o controle de zoom
-              zoomControlsEnabled: true,
-              // para habilitar o controle de zoom
-              zoomGesturesEnabled: true,
-              // para habilitar o controle de rotação
-              rotateGesturesEnabled: true,
-              // para habilitar o controle de inclinação
-              tiltGesturesEnabled: true,
-              // melhorando a performance
-              // gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-              //   Factory<OneSequenceGestureRecognizer>(
-              //     () => EagerGestureRecognizer(),
-              //   ),
-              // },
-              // cacheando o mapa
-              mapType: MapType.normal,
+      myLocationEnabled: true,
+      myLocationButtonEnabled: true,
+      style: _mapStyle,
+      mapType: MapType.normal,
+      zoomControlsEnabled: false,
+      zoomGesturesEnabled: true,
+      markers: Set<Marker>.of(_markers),
+      onLongPress: _onMapLongPressed,
+    ));
+  }
 
-              // para habilitar o tráfego
-              // trafficEnabled: true,
-              // habilitando busca
-
-              // para adicionar o marcador na localização atual
-              // markers: <Marker>{
-              //   Marker(
-              //     markerId: const MarkerId('current-location'),
-              //     position: _center,
-              //     infoWindow: const InfoWindow(title: 'Localização Atual'),
-              //   ),
-              // },
-              // teste
-            ),
+  // Metodo para adicionar o marcador no click
+  void _onMapLongPressed(LatLng latLng) {
+    // evento disparado quando o mapa é pressionado e segurado por alguns segundos
+    Future.delayed(const Duration(seconds: 1), () {
+      // adiciona um novo marcador no click
+      setState(() {
+        _markers.add(Marker(
+          markerId: MarkerId(_markers.length.toString()),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          position: latLng,
+          infoWindow: const InfoWindow(
+            title: "Novo Marcador",
           ),
-        ],
-      ),
-    );
+        ));
+
+        _controller.future.then((GoogleMapController controller) {
+          controller
+              .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+            target: latLng,
+            zoom: 18,
+          )));
+        });
+      });
+    });
   }
 }

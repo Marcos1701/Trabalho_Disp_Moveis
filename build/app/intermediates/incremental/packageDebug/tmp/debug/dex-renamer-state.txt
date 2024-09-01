@@ -1,14 +1,14 @@
-#Thu Aug 29 18:04:41 UTC 2024
-base.0=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeExtDexDebug/classes.dex
-base.1=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeLibDexDebug/0/classes.dex
-base.2=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
-base.3=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/1/classes.dex
-base.4=/workspace/Trabalho_Disp_Moveis/build/app/intermediates/dex/debug/mergeProjectDexDebug/13/classes.dex
+#Sun Sep 01 18:10:42 BRT 2024
+base.0=C\:\\Users\\marco\\OneDrive - MSFT\\Desktop\\Arq\\Modulo_5\\Dispositivos_Moveis\\trabalho_loc_ai\\build\\app\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
+base.1=C\:\\Users\\marco\\OneDrive - MSFT\\Desktop\\Arq\\Modulo_5\\Dispositivos_Moveis\\trabalho_loc_ai\\build\\app\\intermediates\\dex\\debug\\mergeLibDexDebug\\0\\classes.dex
+base.2=C\:\\Users\\marco\\OneDrive - MSFT\\Desktop\\Arq\\Modulo_5\\Dispositivos_Moveis\\trabalho_loc_ai\\build\\app\\intermediates\\dex\\debug\\mergeProjectDexDebug\\0\\classes.dex
+base.3=C\:\\Users\\marco\\OneDrive - MSFT\\Desktop\\Arq\\Modulo_5\\Dispositivos_Moveis\\trabalho_loc_ai\\build\\app\\intermediates\\dex\\debug\\mergeProjectDexDebug\\13\\classes.dex
+base.4=C\:\\Users\\marco\\OneDrive - MSFT\\Desktop\\Arq\\Modulo_5\\Dispositivos_Moveis\\trabalho_loc_ai\\build\\app\\intermediates\\dex\\debug\\mergeProjectDexDebug\\1\\classes.dex
 path.0=classes.dex
 path.1=0/classes.dex
 path.2=0/classes.dex
-path.3=1/classes.dex
-path.4=13/classes.dex
+path.3=13/classes.dex
+path.4=1/classes.dex
 renamed.0=classes.dex
 renamed.1=classes2.dex
 renamed.2=classes3.dex

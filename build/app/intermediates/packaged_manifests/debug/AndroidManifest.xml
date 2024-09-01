@@ -66,9 +66,7 @@
                  while the Flutter UI initializes. After that, this theme continues
                  to determine the Window background behind the Flutter UI.
             -->
-            <meta-data
-                android:name="com.google.android.geo.API_KEY"
-                android:value="AIzaSyAhryq-GBuZYX7Hh4euXud_cF2JoN1RzYk" />
+
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
@@ -86,6 +84,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBRutXItH61yVACsJ-LMeN3UAdd7OsKeqk" />
 
         <service
             android:name="com.baseflow.geolocator.GeolocatorLocationService"
