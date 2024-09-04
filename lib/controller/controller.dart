@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:trabalho_loc_ai/view/view.dart';
+import 'package:trabalho_loc_ai/view/auth/sign_in/view.dart';
+import 'package:trabalho_loc_ai/view/auth/sign_up/view.dart';
+import 'package:trabalho_loc_ai/view/home/view.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -7,13 +9,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // home: MapSample(),
-      // initialRoute: '/login',
       initialRoute: '/',
       routes: {
-        '/': (context) => const LocationMap(),
-        // '/login': (context) => const LoginPage(),
-        // '/cadastro': (context) => const CadastroPage(),
+        '/': (context) => const SingInPage(),
+        '/home': (context) => const LocationMap(),
+        '/signup': (context) => const SignUpPage(),
       },
     );
   }
