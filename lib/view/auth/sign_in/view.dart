@@ -30,7 +30,7 @@ class _SingInPageState extends State<SingInPage> {
       //   password: _passwordController.text,
       // );
 
-      Navigator.pushNamed(context, '/');
+      Navigator.pushNamed(context, '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Preencha todos os campos')),
@@ -59,11 +59,11 @@ class _SingInPageState extends State<SingInPage> {
                     labelText: 'E-mail',
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value.isEmpty ||
-                        !value.contains('@')) {
-                      return 'O e-mail é obrigatório';
-                    }
+                    // if (value == null ||
+                    //     value.isEmpty ||
+                    //     !value.contains('@')) {
+                    //   return 'O e-mail é obrigatório';
+                    // }
                     return null;
                   },
                 ),
@@ -75,19 +75,19 @@ class _SingInPageState extends State<SingInPage> {
                   ),
                   obscureText: true,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'A senha é obrigatória';
-                    }
+                    // if (value == null || value.isEmpty) {
+                    //   return 'A senha é obrigatória';
+                    // }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _validateAndSignIn,
-                  child: const Text('Entrar'),
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(200, 50),
                   ),
+                  child: const Text('Entrar'),
                 ),
                 const SizedBox(height: 16),
                 TextButton(

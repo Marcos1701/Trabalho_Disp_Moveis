@@ -24,7 +24,7 @@ class _SignUpPageState extends State<SignUpPage> {
   void _validateAndSignUp() {
     if (_formKey.currentState!.validate()) {
       //TODO: implementar a lógica de validação e redirecionar para a rota /
-      Navigator.pushNamed(context, '/');
+      Navigator.pushNamed(context, '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Preencha todos os campos')),
@@ -62,11 +62,11 @@ class _SignUpPageState extends State<SignUpPage> {
                   labelText: 'E-mail',
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'O e-mail é obrigatório';
-                  } else if (!value.contains('@')) {
-                    return 'O e-mail deve conter @';
-                  }
+                  // if (value == null || value.isEmpty) {
+                  //   return 'O e-mail é obrigatório';
+                  // } else if (!value.contains('@')) {
+                  //   return 'O e-mail deve conter @';
+                  // }
                   return null;
                 },
               ),
@@ -77,9 +77,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 obscureText: true,
                 validator: (value) {
-                  if (value == null || value.length < 6) {
-                    return 'A senha deve ter no mínimo 6 caracteres';
-                  }
+                  // if (value == null || value.length < 6) {
+                  //   return 'A senha deve ter no mínimo 6 caracteres';
+                  // }
                   return null;
                 },
               ),

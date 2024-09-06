@@ -16,10 +16,10 @@ void initializeFirebase() async {
 }
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+  // WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  initializeFirebase();
+  // initializeFirebase();
 
   runApp(const MyApp());
 }
