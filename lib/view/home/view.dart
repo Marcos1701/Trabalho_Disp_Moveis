@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
+import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
 
 class LocationMap extends StatefulWidget {
   const LocationMap({super.key});
@@ -21,9 +23,33 @@ class LocationMapState extends State<LocationMap>
 
   String _mapStyle = '';
 
+  LatLng? _lastMapPosition;
+
   // metodo para inicializar o mapa
   void _onMapCreated(GoogleMapController controller) {
     _controller.complete(controller);
+  }
+
+  void _getData() async {
+    if (_lastMapPosition != null) {
+      List<TempleModel> templeList =
+          await getTempleList(_lastMapPosition!, context);
+
+      setState(() {
+        for (int i = 0; i < templeList.length; i++) {
+          _markers.add(
+            Marker(
+              markerId: MarkerId(templeList[i].name),
+              position: templeList[i].latLng,
+              infoWindow: InfoWindow(
+                title: templeList[i].name,
+                snippet: templeList[i].address,
+              ),
+            ),
+          );
+        }
+      });
+    }
   }
 
   // metodo para pedir permissão de localização, é utilizado apenas para exibir a localização no mapa
@@ -48,7 +74,10 @@ class LocationMapState extends State<LocationMap>
             ),
           ));
         });
+
+        _lastMapPosition = LatLng(locAtual.latitude, locAtual.longitude);
       });
+      _getData();
     }
     return;
   }
