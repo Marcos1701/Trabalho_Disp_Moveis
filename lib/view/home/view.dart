@@ -35,8 +35,9 @@ class LocationMapState extends State<LocationMap>
       List<TempleModel> templeList =
           await getTempleList(_lastMapPosition!, context);
 
-      setState(() {
-        for (int i = 0; i < templeList.length; i++) {
+      for (int i = 0; i < templeList.length; i++) {
+        print(templeList[i].name);
+        setState(() {
           _markers.add(
             Marker(
               markerId: MarkerId(templeList[i].name),
@@ -47,8 +48,8 @@ class LocationMapState extends State<LocationMap>
               ),
             ),
           );
-        }
-      });
+        });
+      }
     }
   }
 
