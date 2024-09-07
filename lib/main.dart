@@ -4,22 +4,24 @@ import 'package:trabalho_loc_ai/controller/controller.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_config/flutter_config.dart';
 
-void initializeFirebase() async {
+Future<void> initializeFirebase() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
   await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
 
+  return;
 }
 
-void main() {
-  // WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase
-  // initializeFirebase();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Required by FlutterConfig
+  await Future.wait<void>([
+    FlutterConfig.loadEnvVariables(),
+    initializeFirebase()
+  ]); // Para executas ambas ao mesmo tempo
 
   runApp(const MyApp());
 }

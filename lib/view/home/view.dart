@@ -6,6 +6,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
+import 'package:trabalho_loc_ai/view/home/services/bitmaphelper.dart';
+import 'package:flutter_config/flutter_config.dart';
 
 class LocationMap extends StatefulWidget {
   const LocationMap({super.key});
@@ -16,10 +18,24 @@ class LocationMap extends StatefulWidget {
 
 class LocationMapState extends State<LocationMap>
     with TickerProviderStateMixin {
+  
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
 
   final Set<Marker> _markers = {};
+
+  // Json com os icones para cada tipo de local
+  final iconsFromJson = {
+    'bakery': BitmapDescriptor.defaultMarker,
+    'bar': BitmapDescriptor.defaultMarker,
+    'cafe': BitmapDescriptor.defaultMarker,
+    'convenience_store': BitmapDescriptor.defaultMarker,
+    'meal_delivery': BitmapDescriptor.defaultMarker,
+    'meal_takeaway': BitmapDescriptor.defaultMarker,
+    'restaurant': BitmapDescriptor.defaultMarker,
+    'shopping_mall': BitmapDescriptor.defaultMarker,
+    'supermarket': BitmapDescriptor.defaultMarker,
+  };
 
   String _mapStyle = '';
 
@@ -32,11 +48,17 @@ class LocationMapState extends State<LocationMap>
 
   void _getData() async {
     if (_lastMapPosition != null) {
-      List<TempleModel> templeList =
-          await getTempleList(_lastMapPosition!, context);
+      List<TempleModel> templeList = [];
+
+      await Future.wait([
+        getTempleList(_lastMapPosition!, context)
+            .then((value) => templeList = value),
+        // BitmapDescriptorHelper.getBitmapDescriptorFromAsset(
+        //         'assets/images/marker.png', context)
+        //     .then((value) => _mapStyle = value)
+      ]);
 
       for (int i = 0; i < templeList.length; i++) {
-        print(templeList[i].name);
         setState(() {
           _markers.add(
             Marker(
@@ -45,7 +67,10 @@ class LocationMapState extends State<LocationMap>
               infoWindow: InfoWindow(
                 title: templeList[i].name,
                 snippet: templeList[i].address,
+                // onTap: () => Navigator.pushNamed(context, 'details',
+                //     arguments: templeList[i]),
               ),
+              // icon:
             ),
           );
         });

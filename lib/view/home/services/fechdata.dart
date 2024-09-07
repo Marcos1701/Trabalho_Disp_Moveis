@@ -4,6 +4,9 @@ import 'package:logger/logger.dart';
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+//usando dotenv
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_config/flutter_config.dart';
 
 Future<List<TempleModel>> getTempleList(LatLng latLng, context) async {
   var logger = Logger();
@@ -18,13 +21,18 @@ Future<List<TempleModel>> getTempleList(LatLng latLng, context) async {
     "shopping_mall",
     "supermarket",
   ];
+  String apiKey = dotenv.env['ApiKey'] ?? "";
+
+  if (apiKey == "") {
+    apiKey = await FlutterConfig.get('ApiKey');
+  }
 
   List<TempleModel> templeList = [];
 
   for (int i = 0; i < types.length; i++) {
     try {
       http.Response response = await http.get(Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latLng.latitude},${latLng.longitude}&type=${types[i]}&rankby=distance&key=AIzaSyAM2EiZO_F6fh4JiNXwov-aC1LaLvBSimM&language=pt-BR'));
+          'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latLng.latitude},${latLng.longitude}&type=${types[i]}&rankby=distance&key=$apiKey&language=pt-BR'));
 
       Map<String, dynamic> json = {};
       json = jsonDecode(response.body);
@@ -33,11 +41,11 @@ Future<List<TempleModel>> getTempleList(LatLng latLng, context) async {
         logger.e(json['error_message']);
         return [];
       }
-      json = jsonDecode(json['results']);
+      var result = json['results'];
       // List<TempleModel> templeList = [];
       // logger.d(json);R
 
-      for (var element in json['results']) {
+      for (var element in result) {
         logger.d(element);
         templeList.add(TempleModel(
             name: element['name'],
@@ -46,12 +54,16 @@ Future<List<TempleModel>> getTempleList(LatLng latLng, context) async {
                 element['geometry']['location']['lat'], //latitude e longitude
                 element['geometry']['location']['lng']),
             imageUrl: element['icon'],
-            placesId: element['place_id']));
+            placesId: element['place_id'],
+            types: element['types']));
       }
     } catch (e) {
-      //exibe uma mensagem de erro na tela
-      // throw Exception(e);
-      logger.e(e);
+      logger.e(
+        e,
+        stackTrace: StackTrace.current,
+        error: e.toString(),
+        time: DateTime.now(),
+      ); //exibe uma mensagem de erro na tela, como se fosse um log
       continue;
     }
   }
