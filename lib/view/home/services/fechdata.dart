@@ -5,7 +5,6 @@ import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 //usando dotenv
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_config/flutter_config.dart';
 
 Future<List<TempleModel>> getTempleList(LatLng latLng, context) async {
@@ -42,8 +41,6 @@ Future<List<TempleModel>> getTempleList(LatLng latLng, context) async {
     if (json['status'] != 'OK') {
       // throw Exception(json['error_message']);
       logger.e(json['error_message']);
-      logger.d(
-          'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latLng.latitude},${latLng.longitude}&type=${types[i]}&rankby=distance&key=$apiKey&language=pt-BR');
       return [];
     }
     var result = json['results'];

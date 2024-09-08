@@ -5,8 +5,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
-import 'package:trabalho_loc_ai/view/home/services/bitmaphelper.dart';
-import 'package:flutter_config/flutter_config.dart';
 import 'package:custom_info_window/custom_info_window.dart';
 
 class LocationMap extends StatefulWidget {
@@ -41,8 +39,6 @@ class LocationMapState extends State<LocationMap>
 
   LatLng? _lastMapPosition;
 
-  TempleModel? _selectedTemple;
-
   @override
   void dispose() {
     _customInfoWindowController.dispose();
@@ -56,19 +52,54 @@ class LocationMapState extends State<LocationMap>
   }
 
   Widget buildInfoWindow(TempleModel temple) {
-    return Column(children: [
-      Text(temple.name),
-      Text(temple.address),
-      //botão para favoritar o local, com icone de estrela e fundo amarelo
-      IconButton(
-        onPressed: () {},
-        icon: const Icon(Icons.star),
-        color: Colors.amber,
-        iconSize: 30,
-        tooltip: 'Favoritar',
-        splashRadius: 20,
-        splashColor: Colors.amber,
-        highlightColor: Colors.amber,
+    // Widget para mostrar o nome e o endereço do local
+
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Expanded(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          width: double.infinity,
+          height: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  width: 8.0,
+                ),
+                Text(temple.name,
+                    style:
+                        const TextStyle(color: Colors.white, fontSize: 10.0)),
+                const SizedBox(
+                  width: 8.0,
+                ),
+                Text(temple.address,
+                    style:
+                        const TextStyle(color: Colors.white, fontSize: 10.0)),
+                //botão para favoritar o local, com icone de estrela e fundo amarelo
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.star),
+                  color: Colors.amber,
+                  iconSize: 30,
+                  tooltip: 'Favoritar',
+                  splashRadius: 20,
+                  splashColor: Colors.amber,
+                  highlightColor: Colors.amber,
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+      Container(
+        color: Colors.blue,
+        width: 20.0,
+        height: 10.0,
       )
     ]);
   }
@@ -93,14 +124,9 @@ class LocationMapState extends State<LocationMap>
               // infoWindow: InfoWindow(
               //     title: templeList[i].name,
               //     snippet: templeList[i].address,
-
-              //     //     arguments: templeList[i]),
               //     ),
               onTap: () {
-                print("Apertou, ein? Abestado");
-                setState(() {
-                  _selectedTemple = templeList[i];
-                });
+                //ao clicar no local, o mesmo torna-se selecionado
                 _customInfoWindowController.addInfoWindow!(
                   buildInfoWindow(templeList[i]),
                   templeList[i].latLng,
@@ -117,7 +143,7 @@ class LocationMapState extends State<LocationMap>
   }
 
   // metodo para pedir permissão de localização, é utilizado apenas para exibir a localização no mapa
-  void requestPermission() async {
+  Future<void> requestPermission() async {
     var status = await Geolocator.checkPermission();
     if (status == LocationPermission.denied) {
       status = await Geolocator.requestPermission();
@@ -146,32 +172,6 @@ class LocationMapState extends State<LocationMap>
     return;
   }
 
-  void _showBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return SizedBox(
-          height: 200,
-          child: _selectedTemple != null
-              ? Column(
-                  children: [
-                    // Image.network(_selectedTemple!.imageUrl),
-                    Text(_selectedTemple!.name),
-                    Text(_selectedTemple!.address),
-                    TextButton(
-                      onPressed: () {
-                        // favoritar o local
-                      },
-                      child: const Text('Favoritar'),
-                    ),
-                  ],
-                )
-              : const Text('Nenhum local selecionado'),
-        );
-      },
-    );
-  }
-
   @override
   void initState() {
     super.initState();
@@ -181,8 +181,7 @@ class LocationMapState extends State<LocationMap>
       rootBundle.loadString('assets/map_style.txt').then((string) {
         _mapStyle = string;
       });
-
-      requestPermission();
+      requestPermission().then((_) => {});
     });
   }
 
@@ -213,7 +212,6 @@ class LocationMapState extends State<LocationMap>
           onCameraMove: _onCameraMove,
           onTap: (LatLng latLng) {
             _customInfoWindowController.hideInfoWindow!();
-            _selectedTemple = null;
           },
         ),
         CustomInfoWindow(
@@ -224,8 +222,8 @@ class LocationMapState extends State<LocationMap>
         ),
       ]),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          requestPermission();
+        onPressed: () async {
+          await requestPermission();
         },
         tooltip: 'Localização',
         backgroundColor: Colors.blue,

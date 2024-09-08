@@ -34,10 +34,10 @@
   <link rel="manifest" href="manifest.json">
 
   <script>
-    import dotenv from 'dotenv';
+    import * as dotenv from 'dotenv';
 
     dotenv.config();
-    const apikey = process.env.ApiKey;
+    const apikey = process.env['ApiKey'];
 
     console.log(apikey);
 
@@ -50,7 +50,8 @@
   </script>
 
   <script>
-    { { flutter_service_worker_version } }
+    // The value below is injected by flutter build, do not touch.
+    var serviceWorkerVersion = null;
   </script>
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
@@ -61,7 +62,7 @@
   <script>
     window.addEventListener('load', function (ev) {
       // Download main.dart.js
-      FlutterLoader.load({
+      _flutter.loader.loadEntrypoint({
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
         },
