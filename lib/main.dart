@@ -11,8 +11,6 @@ Future<void> initializeFirebase() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
-
   return;
 }
 
