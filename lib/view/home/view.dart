@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
 import 'package:custom_info_window/custom_info_window.dart';
@@ -21,6 +22,9 @@ class LocationMapState extends State<LocationMap>
   final Set<Marker> _markers = {};
   final CustomInfoWindowController _customInfoWindowController =
       CustomInfoWindowController();
+
+  final FirebaseUtils _firebaseUtils = FirebaseUtils();
+  final List<TempleModel> _favoritelist = [];
 
   // Json com os icones para cada tipo de local
   final iconsFromJson = {
@@ -82,14 +86,26 @@ class LocationMapState extends State<LocationMap>
                         const TextStyle(color: Colors.white, fontSize: 10.0)),
                 //botão para favoritar o local, com icone de estrela e fundo amarelo
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    setState(() {
+                      temple.isFavorite
+                          ? _firebaseUtils.addFavorite(temple).then(
+                                (value) => _favoritelist.add(temple),
+                              )
+                          : _firebaseUtils.removeFavorite(temple).then(
+                                (value) => _favoritelist.remove(temple),
+                              );
+                      temple.toggleFavorite();
+                    });
+                  },
                   icon: const Icon(Icons.star),
-                  color: Colors.amber,
+                  color: temple.isFavorite ? Colors.amber : Colors.white,
                   iconSize: 30,
                   tooltip: 'Favoritar',
                   splashRadius: 20,
-                  splashColor: Colors.amber,
-                  highlightColor: Colors.amber,
+                  splashColor: temple.isFavorite ? Colors.amber : Colors.white,
+                  highlightColor:
+                      temple.isFavorite ? Colors.amber : Colors.white,
                 )
               ],
             ),
@@ -182,6 +198,12 @@ class LocationMapState extends State<LocationMap>
         _mapStyle = string;
       });
       requestPermission().then((_) => {});
+    });
+    _firebaseUtils.getAllFavorites().then((value) {
+      setState(() {
+        _favoritelist.clear();
+        _favoritelist.addAll(value);
+      });
     });
   }
 
