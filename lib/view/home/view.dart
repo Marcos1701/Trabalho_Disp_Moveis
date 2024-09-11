@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:trabalho_loc_ai/view/auth/sign_in/view.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
@@ -24,7 +26,6 @@ class LocationMapState extends State<LocationMap>
       CustomInfoWindowController();
 
   final FirebaseUtils _firebaseUtils = FirebaseUtils();
-  final List<TempleModel> _favoritelist = [];
 
   // Json com os icones para cada tipo de local
   final iconsFromJson = {
@@ -89,12 +90,8 @@ class LocationMapState extends State<LocationMap>
                   onPressed: () {
                     setState(() {
                       temple.isFavorite
-                          ? _firebaseUtils.addFavorite(temple).then(
-                                (value) => _favoritelist.add(temple),
-                              )
-                          : _firebaseUtils.removeFavorite(temple).then(
-                                (value) => _favoritelist.remove(temple),
-                              );
+                          ? _firebaseUtils.addFavorite(temple)
+                          : _firebaseUtils.removeFavorite(temple);
                       temple.toggleFavorite();
                     });
                   },
@@ -120,7 +117,7 @@ class LocationMapState extends State<LocationMap>
     ]);
   }
 
-  void _getData() async {
+  Future<void> _getData() async {
     if (_lastMapPosition != null) {
       List<TempleModel> templeList =
           await getTempleList(_lastMapPosition!, context);
@@ -137,10 +134,6 @@ class LocationMapState extends State<LocationMap>
             Marker(
               markerId: MarkerId(templeList[i].placesId),
               position: templeList[i].latLng,
-              // infoWindow: InfoWindow(
-              //     title: templeList[i].name,
-              //     snippet: templeList[i].address,
-              //     ),
               onTap: () {
                 //ao clicar no local, o mesmo torna-se selecionado
                 _customInfoWindowController.addInfoWindow!(
@@ -153,6 +146,49 @@ class LocationMapState extends State<LocationMap>
               // icon:
             ),
           );
+        });
+      }
+    }
+  }
+
+  Future<void> _getFavorites() async {
+    if (_lastMapPosition != null) {
+      List<TempleModel> templeList = await _firebaseUtils.getAllFavorites();
+
+      for (int i = 0; i < templeList.length; i++) {
+        //verifica se o local já existe no mapa
+        if (_markers
+            .any((marker) => marker.markerId == MarkerId(templeList[i].name))) {
+          // altera o status do local para favoritado
+          setState(() {
+            _markers.map(
+              (marker) => marker.markerId == MarkerId(templeList[i].name)
+                  ? marker.copyWith(
+                      iconParam: BitmapDescriptor.defaultMarkerWithHue(
+                          templeList[i].isFavorite
+                              ? BitmapDescriptor.hueRed
+                              : BitmapDescriptor.hueYellow))
+                  : marker,
+            );
+          });
+          continue;
+        }
+
+        setState(() {
+          _markers.add(Marker(
+            markerId: MarkerId(templeList[i].placesId),
+            position: templeList[i].latLng,
+            onTap: () {
+              //ao clicar no local, o mesmo torna-se selecionado
+              _customInfoWindowController.addInfoWindow!(
+                buildInfoWindow(templeList[i]),
+                templeList[i].latLng,
+              );
+            },
+            icon: iconsFromJson[templeList[i].types.first] ??
+                BitmapDescriptor.defaultMarkerWithHue(
+                    BitmapDescriptor.hueYellow),
+          ));
         });
       }
     }
@@ -183,7 +219,8 @@ class LocationMapState extends State<LocationMap>
 
         _lastMapPosition = LatLng(locAtual.latitude, locAtual.longitude);
       });
-      _getData();
+      await _getData();
+      await _getFavorites();
     }
     return;
   }
@@ -192,19 +229,19 @@ class LocationMapState extends State<LocationMap>
   void initState() {
     super.initState();
 
+    if (FirebaseAuth.instance.currentUser == null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const SingInPage()),
+      );
+    }
+
     // carrega o arquivo de estilo do mapa
     setState(() {
       rootBundle.loadString('assets/map_style.txt').then((string) {
         _mapStyle = string;
       });
-      requestPermission().then((_) => {});
     });
-    _firebaseUtils.getAllFavorites().then((value) {
-      setState(() {
-        _favoritelist.clear();
-        _favoritelist.addAll(value);
-      });
-    });
+    requestPermission().then((_) => {});
   }
 
   void _onCameraMove(CameraPosition position) {
@@ -230,6 +267,7 @@ class LocationMapState extends State<LocationMap>
           zoomGesturesEnabled: true,
           indoorViewEnabled: false,
           markers: Set<Marker>.of(_markers),
+          // markers: _markers,
           // onLongPress: _onMapLongPressed,
           onCameraMove: _onCameraMove,
           onTap: (LatLng latLng) {

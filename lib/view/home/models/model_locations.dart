@@ -35,4 +35,15 @@ class TempleModel {
       'lng': latLng.longitude,
     };
   }
+
+  factory TempleModel.fromMap(Map<String, dynamic> map) {
+    return TempleModel(
+      name: map['name'],
+      address: map['address'],
+      types: List<String>.from(map['types']),
+      imageUrl: map['imageUrl'],
+      placesId: map['placesId'],
+      latLng: LatLng(map['lat'], map['lng']),
+    );
+  }
 }

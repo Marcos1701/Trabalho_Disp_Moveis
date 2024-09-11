@@ -38,54 +38,75 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  Future<void> _validateAndSignUp() async {
+  void _validateAndSignUp() {
     if (_formKey.currentState!.validate()) {
       try {
-        _userCredential = await _auth.createUserWithEmailAndPassword(
+        _auth
+            .createUserWithEmailAndPassword(
           email: _emailController.text,
           password: _passwordController.text,
+        )
+            .then(
+          (value) {
+            _userCredential = value;
+            if (_userCredential.user == null) {
+              return;
+            }
+            _firestore.collection('users').doc(_userCredential.user!.uid).set(
+              {'name': _nameController.text, 'email': _emailController.text},
+            ).then(
+              (value) {
+                if (mounted) {
+                  Navigator.pushNamed(context, '/home');
+                }
+              },
+            );
+          },
         );
-        //salva o usuário no firestore
-        _firestore
-            .collection('users')
-            .doc(_userCredential.user!.uid) //doc do firebase, id do usuário
-            .set({'name': _nameController.text});
-
-        if (mounted) {
-          Navigator.pushNamed(context, '/home');
-        }
       } on FirebaseAuthException catch (e) {
         if (e.code == 'weak-password') {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Senha muito fraca')),
-            );
-          }
-
-          print('Senha muito fraca');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Senha muito fraca')),
+          );
         } else if (e.code == 'email-already-in-use') {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Este e-mail ja esta em uso')),
-            );
-          }
-
-          print('Este e-mail ja esta em uso');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Este e-mail ja esta em uso')),
+          );
         } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erro ao criar o usuário: ${e.message}')),
-            );
-          }
-          print('Erro ao criar o usuário: ${e.message}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao criar o usuário: ${e.message}')),
+          );
         }
         print(e.code); //Add this line to see other firebase exceptions.
       } catch (e) {
-        print(e);
+        print(e.toString());
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos')),
+        SnackBar(
+          content: const Text(
+            'Preencha todos os campos',
+            style: TextStyle(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16.0),
+          duration: const Duration(seconds: 2),
+          dismissDirection: DismissDirection.horizontal,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8.0)),
+          ),
+          action: SnackBarAction(
+            label: 'Fechar',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),
+          showCloseIcon: true,
+          closeIconColor: Colors.white,
+        ),
       );
     }
   }
@@ -156,9 +177,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 },
                 autocorrect: false,
                 focusNode: _passwordFocus,
-                onFieldSubmitted: (value) async {
+                onFieldSubmitted: (value) {
                   _passwordFocus.unfocus();
-                  await _validateAndSignUp();
+                  _validateAndSignUp();
                 },
               ),
               const SizedBox(height: 16),

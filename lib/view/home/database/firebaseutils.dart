@@ -1,59 +1,43 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+// import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 
 class FirebaseUtils {
-  final List<TempleModel> _favoritelist = [];
-  late final FirebaseFirestore _firestore;
+  late final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth auth = FirebaseAuth.instance;
   final Logger _logger = Logger();
-  late final String _user;
-
-  FirebaseUtils() {
-    _firestore = FirebaseFirestore.instance;
-
-    FirebaseAuth auth = FirebaseAuth.instance;
-    _user = auth.currentUser!.uid;
-
-    _logger.i('user: $_user');
-
-    // _logger.i(_user);
-    _user = 'marco';
-  }
 
   Future<List<TempleModel>> getAllFavorites() async {
     _logger.i('getAllFavorites');
 
-    _favoritelist.clear();
+    var userId = auth.currentUser!.uid;
+
     var querySnapshot = await _firestore
-        .collection('favorites')
-        .where('user', isEqualTo: 'marco')
+        .collection(userId)
+        .doc('favorites')
+        .collection('temple')
+        .orderBy('name', descending: false)
         .get();
 
-    for (var doc in querySnapshot.docs) {
-      TempleModel temple = TempleModel(
-          name: doc['name'],
-          address: doc['address'],
-          types: List<String>.from(doc['types']),
-          imageUrl: doc['imageUrl'],
-          placesId: doc['placesId'],
-          latLng: LatLng(doc['lat'], doc['lng']));
-      _favoritelist.add(temple);
-    }
-
-    return _favoritelist;
+    return querySnapshot.docs
+        .map((temple) => TempleModel.fromMap(temple.data()))
+        .toList();
   }
 
   Future<void> addFavorite(TempleModel temple) async {
     _logger.i('addFavorite');
+
+    var userId = auth.currentUser!.uid;
+
     try {
       await _firestore
-          .collection('favorites')
+          .collection(userId)
+          .doc('favorites')
+          .collection('temple')
           .doc(temple.placesId)
           .set(temple.toMap());
-
-      _favoritelist.add(temple);
     } on FirebaseException catch (e) {
       _logger.e(e);
     }
@@ -61,16 +45,32 @@ class FirebaseUtils {
 
   Future<void> removeFavorite(TempleModel temple) async {
     _logger.i('removeFavorite');
+
+    var userId = auth.currentUser!.uid;
+
     try {
-      await _firestore.collection('favorites').doc(temple.placesId).delete();
-      _favoritelist.remove(temple);
+      await _firestore
+          .collection(userId)
+          .doc('favorites')
+          .collection('temple')
+          .doc(temple.placesId)
+          .delete();
     } on FirebaseException catch (e) {
       _logger.e(e);
     }
   }
 
-  List<TempleModel> getFavoriteList() {
-    _logger.i('getFavoriteList');
-    return _favoritelist;
+  //stream builder, para que o firebase sempre atualize os favoritos
+  Stream<List<TempleModel>> getAllFavoritesStream() {
+    return _firestore
+        .collection(auth.currentUser!.uid)
+        .doc('favorites')
+        .collection('temple')
+        .snapshots()
+        .map((event) {
+      return event.docs.map((temple) {
+        return TempleModel.fromMap(temple.data());
+      }).toList();
+    });
   }
 }
