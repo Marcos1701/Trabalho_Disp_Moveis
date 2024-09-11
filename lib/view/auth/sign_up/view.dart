@@ -20,14 +20,15 @@ class _SignUpPageState extends State<SignUpPage> {
   final _passwordFocus = FocusNode();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  late UserCredential _userCredential;
 
-  late final FirebaseFirestore _firestore;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
+    if (_auth.currentUser != null) {
+      Navigator.pushNamed(context, '/home');
+    }
     super.initState();
-    _firestore = FirebaseFirestore.instance;
   }
 
   @override
@@ -48,17 +49,36 @@ class _SignUpPageState extends State<SignUpPage> {
         )
             .then(
           (value) {
-            _userCredential = value;
-            if (_userCredential.user == null) {
+            UserCredential? userCredential = value;
+            userCredential = value;
+            if (userCredential.user == null) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Erro ao criar o usuário')),
+                );
+              }
               return;
             }
-            _firestore.collection('users').doc(_userCredential.user!.uid).set(
-              {'name': _nameController.text, 'email': _emailController.text},
-            ).then(
+
+            _auth.currentUser!.updateDisplayName(_nameController.text).then(
+              //atualiza o nome do usuário
               (value) {
-                if (mounted) {
-                  Navigator.pushNamed(context, '/home');
-                }
+                _firestore
+                    .collection('users')
+                    .doc(userCredential!.user!.uid)
+                    .set(
+                  {
+                    'name': _nameController.text,
+                    'email': _emailController.text
+                  }, // Adiciona o nome e o email ao documento do usuário no firestore (Banco de Dados)
+                ).then(
+                  (value) {
+                    if (mounted) {
+                      Navigator.pushNamed(
+                          context, '/home'); //redireciona para a tela inicial
+                    }
+                  },
+                );
               },
             );
           },
@@ -145,6 +165,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 controller: _emailController,
                 decoration: const InputDecoration(
                   labelText: 'E-mail',
+                  icon: Icon(Icons.email),
+                  iconColor: Colors.blue,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -167,6 +189,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 controller: _passwordController,
                 decoration: const InputDecoration(
                   labelText: 'Senha',
+                  icon: Icon(Icons.lock_outline_rounded),
+                  iconColor: Colors.blue,
                 ),
                 obscureText: true,
                 validator: (value) {
@@ -187,6 +211,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 onPressed: _validateAndSignUp,
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(200, 50),
+                  textStyle: const TextStyle(
+                    fontSize: 20,
+                  ),
                 ),
                 child: const Text('Cadastrar'),
               ),
@@ -198,9 +225,24 @@ class _SignUpPageState extends State<SignUpPage> {
                 style: TextButton.styleFrom(
                   textStyle: const TextStyle(
                     fontSize: 20,
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                    decorationThickness: 2.0,
+                    decorationColor: Colors.blue,
+                    decorationStyle: TextDecorationStyle.solid,
+                    shadows: [
+                      Shadow(
+                        color: Colors.blue,
+                        blurRadius: 2.0,
+                        offset: Offset(1.0, 1.0),
+                      ),
+                    ],
                   ),
                 ),
-                child: const Text('Ja possuo uma conta'),
+                child: const Text(
+                  'Ja possuo uma conta',
+                  style: TextStyle(fontSize: 20),
+                ),
               ),
             ],
           ),

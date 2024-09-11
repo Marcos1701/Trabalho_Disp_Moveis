@@ -35,13 +35,6 @@ class _SingInPageState extends State<SingInPage> {
 
   void _validateAndSignIn() {
     if (_formKey.currentState!.validate()) {
-      if (_auth.currentUser != null) {
-        _auth.signOut().then(
-          (value) {
-            print("Deslogou");
-          },
-        );
-      }
       _auth
           .signInWithEmailAndPassword(
         email: _emailController.text,
