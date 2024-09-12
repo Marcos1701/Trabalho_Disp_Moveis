@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+import 'package:trabalho_loc_ai/main.dart';
+import 'package:trabalho_loc_ai/view/auth/sign_in/view.dart';
+import 'package:trabalho_loc_ai/view/auth/sign_up/view.dart';
+import 'package:trabalho_loc_ai/view/home/view.dart';
+
+/*
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SingInPage(),
+        '/home': (context) => const LocationMap(),
+        '/signup': (context) => const SignUpPage(),
+      },
+    );
+  }
+}
+*/
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Nearby Restaurants',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      debugShowCheckedModeBanner: false,
+      home: RoteadorTela(),
+      routes: {
+        '/login': (context) => LoginPage(),
+        '/register': (context) => RegisterPage(),
+        '/home': (context) => LocationMap(),
+      },
+    );
+  }
+}
