@@ -81,7 +81,6 @@ Future<List<TempleModel>> getTempleList(LatLng latLng) async {
 
   List<TempleModel> favorites = await getFavorites();
   for (var favorite in favorites) {
-    print(favorite.isFavorite);
     templeList.removeWhere((temple) => temple.placesId == favorite.placesId);
 
     templeList.add(favorite);

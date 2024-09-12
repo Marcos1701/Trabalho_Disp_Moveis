@@ -1,180 +1,201 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:trabalho_loc_ai/view/home/view.dart';
+import 'package:trabalho_loc_ai/_comum/meu_snackbar.dart';
+import 'package:trabalho_loc_ai/view/auth/services/autenticacao_servico.dart';
+import 'package:trabalho_loc_ai/view/auth/sign_up/view.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 
-class SingInPage extends StatefulWidget {
-  const SingInPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<SingInPage> createState() => _SingInPageState();
+  State<LoginPage> createState() => _LoginState();
 }
 
-class _SingInPageState extends State<SingInPage> {
-  final _formKey = GlobalKey<FormState>();
+class _LoginState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  final _emailFocus = FocusNode();
-  final _passwordFocus = FocusNode();
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  void _validateAndSignIn() {
-    if (_formKey.currentState!.validate()) {
-      _auth
-          .signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      )
-          .then(
-        (value) {
-          UserCredential? userCredential = value;
-          if (userCredential.user == null) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Usuário ou senha inválidos')),
-              );
-            }
-            return;
-          }
-
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const LocationMap(),
-              ),
-            );
-          }
-        },
-      );
-    } else {
-      // Verifica se o widget ainda está montado antes de mostrar um SnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha todos os campos'),
-        ),
-      );
-    }
-  }
+  final _formKey = GlobalKey<FormState>();
+  final AutenticacaoServico _autenticacaoServico = AutenticacaoServico();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Página de Login'),
-        centerTitle: true,
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        title: const Text('Login'),
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Form(
             key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'E-mail',
-                    icon: Icon(Icons.email),
-                    iconColor: Colors.blue,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Image(
+                    image: AssetImage('assets/logo.png'),
+                    width: 150,
+                    height: 150,
                   ),
-                  validator: (value) {
-                    if (value == null ||
-                        value.isEmpty ||
-                        !value.contains('@') ||
-                        !value.contains('.')) {
-                      return 'O e-mail é obrigatório';
-                    }
-                    return null;
-                  },
-                  autocorrect: false,
-                  focusNode: _emailFocus,
-                  onFieldSubmitted: (value) {
-                    _emailFocus.unfocus();
-                    FocusScope.of(context).requestFocus(
-                      _passwordFocus,
-                    ); // Move o foco para o campo de senha
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Senha',
-                    iconColor: Colors.blue,
-                    icon: Icon(Icons.lock_outlined),
-                  ),
-                  enableSuggestions: false,
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'A senha é obrigatória';
-                    }
-                    return null;
-                  },
-                  autocorrect: false,
-                  focusNode: _passwordFocus,
-                  onFieldSubmitted: (value) {
-                    _passwordFocus.unfocus();
-                    _validateAndSignIn();
-                  },
-                  //exibindo botão para esconder a senha
-                  // obscureText: _obscureText,
-                  showCursor: true,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _validateAndSignIn,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(200, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    textStyle: const TextStyle(fontSize: 20),
-                  ),
-                  child: const Text(
-                    'Entrar',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/signup');
-                  },
-                  style: TextButton.styleFrom(
-                    textStyle: const TextStyle(
-                      fontSize: 20,
-                      decoration: TextDecoration.underline,
-                      color: Colors.blue,
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: 300,
+                    child: TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      textInputAction: TextInputAction.next,
+                      validator: (String? value) {
+                        if (value!.isEmpty) {
+                          return "O campo e-mail deve ser preenchido.";
+                        }
+                        if (value.length < 6) {
+                          return "O campo e-mail deve ter pelo menos 6 caracteres.";
+                        }
+                        if (!value.contains("@")) {
+                          return "O campo e-mail deve conter um @.";
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                          labelText: 'Email',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                            borderSide:
+                                const BorderSide(color: Colors.black, width: 2),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                            borderSide:
+                                const BorderSide(color: Colors.blue, width: 4),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                            borderSide:
+                                const BorderSide(color: Colors.red, width: 2),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                            borderSide:
+                                const BorderSide(color: Colors.red, width: 4),
+                          )),
                     ),
                   ),
-                  child: const Text(
-                    'Criar conta',
-                    style: TextStyle(
-                      decoration: TextDecoration.underline,
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: 300,
+                    child: TextFormField(
+                      controller: _passwordController,
+                      keyboardType: TextInputType.visiblePassword,
+                      autofillHints: const [AutofillHints.password],
+                      textInputAction: TextInputAction.done,
+                      obscureText: true,
+                      validator: (String? value) {
+                        if (value!.isEmpty) {
+                          return "O campo senha deve ser preenchido.";
+                        }
+                        if (value.length < 8) {
+                          return "O campo senha deve ter pelo menos 8 caracteres.";
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                          labelText: 'Senha',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                            borderSide:
+                                const BorderSide(color: Colors.black, width: 2),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                            borderSide:
+                                const BorderSide(color: Colors.blue, width: 4),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                            borderSide:
+                                const BorderSide(color: Colors.red, width: 2),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(64),
+                            borderSide:
+                                const BorderSide(color: Colors.red, width: 4),
+                          )),
                     ),
                   ),
-                ),
-              ],
+                  /*
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: false,
+                        onChanged: (value) {
+                          //TODO: Implementar
+                        },
+                      ),
+                      const Text('Lembre-me'),
+                    ],
+                  ),
+                  */
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                      backgroundColor: Colors.green,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(0)),
+                      ),
+                    ),
+                    onPressed: () async {
+                      botaoLogin();
+                    },
+                    child: const Text('Entrar'),
+                  ),
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  TextButton(
+                    onPressed: () {
+                      // Navigator.pushNamed(context, '/register');
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) { 
+                          return const RegisterPage(); 
+                        }),
+                      );
+                    },
+                    child: const Text(
+                        'Ainda não tem uma conta? Clique aqui!'),
+                  )
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  botaoLogin() {
+    String email = _emailController.text;
+    String senha = _passwordController.text;
+
+    if (_formKey.currentState!.validate()) {
+      _autenticacaoServico
+      .logarUsuario(email: email, senha: senha)
+      .then(
+        (String? erro) {
+          if (erro != null) {
+            mostrarSnackBar(context: context, texto: erro);
+          }
+        },
+      );
+    } else {
+      print('Login falhou!');
+    }
   }
 }

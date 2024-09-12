@@ -1,117 +1,21 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:trabalho_loc_ai/_comum/meu_snackbar.dart';
+import 'package:trabalho_loc_ai/view/auth/services/autenticacao_servico.dart';
 import 'package:flutter/material.dart';
+import 'package:trabalho_loc_ai/view/auth/sign_in/view.dart';
 
-class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<SignUpPage> createState() => _SignUpPageState();
+  State<RegisterPage> createState() => _RegisterState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
-  final _formKey = GlobalKey<FormState>();
+class _RegisterState extends State<RegisterPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  final _nameFocus = FocusNode();
-  final _emailFocus = FocusNode();
-  final _passwordFocus = FocusNode();
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void _validateAndSignUp() {
-    if (_formKey.currentState!.validate()) {
-      try {
-        _auth
-            .createUserWithEmailAndPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
-        )
-            .then(
-          (value) {
-            UserCredential? userCredential = value;
-            userCredential = value;
-            if (userCredential.user == null) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Erro ao criar o usuário')),
-                );
-              }
-              return;
-            }
-
-            //atualiza o nome do usuário
-            _auth.currentUser!
-                .updateDisplayName(_nameController.text)
-                .then((value) {});
-          },
-        );
-        Navigator.pushNamed(context, '/home'); //redireciona para a tela inicial
-      } on FirebaseAuthException catch (e) {
-        if (e.code == 'weak-password') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Senha muito fraca')),
-          );
-        } else if (e.code == 'email-already-in-use') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Este e-mail ja esta em uso')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao criar o usuário: ${e.message}')),
-          );
-        }
-      } catch (e) {
-        // print(e.toString());
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao criar o usuário: ${e.toString()}')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Preencha todos os campos',
-            style: TextStyle(color: Colors.white),
-            textAlign: TextAlign.center,
-          ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16.0),
-          duration: const Duration(seconds: 2),
-          dismissDirection: DismissDirection.horizontal,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8.0)),
-          ),
-          action: SnackBarAction(
-            label: 'Fechar',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-          showCloseIcon: true,
-          closeIconColor: Colors.white,
-        ),
-      );
-    }
-  }
+  final _formKey = GlobalKey<FormState>();
+  final AutenticacaoServico _autenticacaoServico = AutenticacaoServico();
 
   @override
   Widget build(BuildContext context) {
@@ -119,117 +23,271 @@ class _SignUpPageState extends State<SignUpPage> {
       appBar: AppBar(
         title: const Text('Cadastro'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'O nome é obrigatório';
-                  }
-                  return null;
-                },
-                autocorrect: false,
-                focusNode: _nameFocus,
-                onFieldSubmitted: (value) {
-                  _nameFocus.unfocus();
-                  FocusScope.of(context).requestFocus(_emailFocus);
-                },
-              ),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'E-mail',
-                  icon: Icon(Icons.email),
-                  iconColor: Colors.blue,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'O e-mail é obrigatório';
-                  } else if (!value.contains('@')) {
-                    return 'O e-mail deve conter @';
-                  } else if (!value.contains('.')) {
-                    return 'Insira um e-mail valido';
-                  }
-                  return null;
-                },
-                autocorrect: false,
-                focusNode: _emailFocus,
-                onFieldSubmitted: (value) {
-                  _emailFocus.unfocus();
-                  FocusScope.of(context).requestFocus(_passwordFocus);
-                },
-              ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Senha',
-                  icon: Icon(Icons.lock_outline_rounded),
-                  iconColor: Colors.blue,
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.length < 6) {
-                    return 'A senha deve ter no mínimo 6 caracteres';
-                  }
-                  return null;
-                },
-                autocorrect: false,
-                focusNode: _passwordFocus,
-                onFieldSubmitted: (value) {
-                  _passwordFocus.unfocus();
-                  _validateAndSignUp();
-                },
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _validateAndSignUp,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(200, 50),
-                  textStyle: const TextStyle(
-                    fontSize: 20,
+      body: Center(
+          child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Form(
+                key: _formKey,
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Image(
+                          image: AssetImage('assets/logo.png'),
+                          width: 150,
+                          height: 150,
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            controller: _nameController,
+                            keyboardType: TextInputType.name,
+                            autofillHints: const [AutofillHints.name],
+                            textInputAction: TextInputAction.next,
+                            validator: (String? value) {
+                              if (value!.isEmpty) {
+                                return "O campo Nome Completo deve ser preenchido.";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                                labelText: 'Nome Completo',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.black, width: 2),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.blue, width: 4),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 2),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 4),
+                                )),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                            textInputAction: TextInputAction.next,
+                            validator: (String? value) {
+                              if (value!.isEmpty) {
+                                return "O campo E-mail deve ser preenchido.";
+                              }
+                              if (value.length < 6) {
+                                return "O campo E-mail deve ter pelo menos 6 caracteres.";
+                              }
+                              if (!value.contains("@")) {
+                                return "O campo E-mail deve conter um @.";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                                labelText: 'E-mail',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.black, width: 2),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.blue, width: 4),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 2),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 4),
+                                )),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            controller: _passwordController,
+                            keyboardType: TextInputType.visiblePassword,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            obscureText: true,
+                            validator: (String? value) {
+                              if (value!.isEmpty) {
+                                return "O campo Senha deve ser preenchido.";
+                              }
+                              if (value.length < 8) {
+                                return "O campo Senha deve ter pelo menos 8 caracteres.";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                                labelText: 'Senha',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.black, width: 2),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.blue, width: 4),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 2),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 4),
+                                )),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            keyboardType: TextInputType.visiblePassword,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            obscureText: true,
+                            validator: (String? value) {
+                              if (value!.isEmpty) {
+                                return "O campo Confirme a senha deve ser preenchido.";
+                              }
+                              if (value.length < 8) {
+                                return "O campo Confirme a senha deve ter pelo menos 8 caracteres.";
+                              }
+                              if (value != _passwordController.text) {
+                                return "As senhas devem ser iguais.";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                                labelText: 'Confirme a senha',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.black, width: 2),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.blue, width: 4),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 2),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(64),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 4),
+                                )),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            backgroundColor: Colors.blue,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(0)),
+                            ),
+                          ),
+                          onPressed: () {
+                            botaoCadastrar();
+                          },
+                          child: const Text('Cadastrar'),
+                        ),
+                        const SizedBox(height: 20),
+                        const Divider(),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) {
+                                return const LoginPage();
+                              }),
+                            );
+                          },
+                          child: const Text('Já tem uma conta? Clique aqui!'),
+                        )
+                      ],
+                    ),
                   ),
                 ),
-                child: const Text('Cadastrar'),
-              ),
-              //Botao para realizar o login
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/signin');
-                },
-                style: TextButton.styleFrom(
-                  textStyle: const TextStyle(
-                    fontSize: 20,
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
-                    decorationThickness: 2.0,
-                    decorationColor: Colors.blue,
-                    decorationStyle: TextDecorationStyle.solid,
-                    shadows: [
-                      Shadow(
-                        color: Colors.blue,
-                        blurRadius: 2.0,
-                        offset: Offset(1.0, 1.0),
-                      ),
-                    ],
-                  ),
-                ),
-                child: const Text(
-                  'Ja possuo uma conta',
-                  style: TextStyle(fontSize: 20),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+              ))),
     );
+  }
+
+  botaoCadastrar() {
+    String nome = _nameController.text;
+    String email = _emailController.text;
+    String senha = _passwordController.text;
+
+    if (_formKey.currentState!.validate()) {
+      print('Nome: ${_nameController.text}');
+      print('Email: ${_emailController.text}');
+      print('Senha: ${_passwordController.text}');
+      _autenticacaoServico
+          .cadastrarUsuario(nome: nome, email: email, senha: senha)
+          .then(
+        (String? erro) {
+          if (erro != null) {
+            mostrarSnackBar(context: context, texto: erro);
+          } else {
+            mostrarSnackBar(
+              context: context,
+              texto: 'Cadastro efetuado com sucesso!',
+              isError: false,
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) {
+                return const LoginPage();
+              }),
+            );
+          }
+        },
+      );
+
+      //Navigator.pushNamed(context, '/login');
+    } else {
+      print('Cadastro falhou!');
+    }
   }
 }

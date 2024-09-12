@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:trabalho_loc_ai/view/auth/services/autenticacao_servico.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
@@ -103,61 +104,30 @@ class LocationMapState extends State<LocationMap>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  leading: IconButton(
-                    onPressed: () {
-                      setState(() {
-                        temple.isFavorite
-                            ? _firebaseUtils.addFavorite(temple)
-                            : _firebaseUtils.removeFavorite(temple);
-                        temple.toggleFavorite();
-                        Marker updatedMarker = temple.toMarker(
-                          () => _customInfoWindowController.addInfoWindow!(
-                            buildInfoWindow(temple),
-                            temple.latLng,
-                          ),
-                        );
-                        _markers.removeWhere((marker) =>
-                            temple.placesId == marker.markerId.value);
-                        _markers.add(updatedMarker);
-
-                        _customInfoWindowController.hideInfoWindow!();
-                      });
-                    },
-                    icon: const Icon(Icons.star),
-                    color: temple.isFavorite ? Colors.amber : Colors.white,
-                    iconSize: 30,
-                    tooltip: temple.isFavorite
-                        ? 'Remover dos favoritos'
-                        : 'Favoritar',
-                    splashRadius: 20,
-                    splashColor:
-                        temple.isFavorite ? Colors.amber : Colors.white,
-                    highlightColor:
-                        temple.isFavorite ? Colors.amber : Colors.white,
-                  ),
-                  trailing: IconButton(
-                    onPressed: () {
-                      _customInfoWindowController.hideInfoWindow!();
-                    },
-                    icon: const Icon(Icons.close),
+                  leading: Icon(
+                    temple.isFavorite ? Icons.star : Icons.star_border_outlined,
                     color: Colors.white,
-                    iconSize: 30,
-                    tooltip: 'Fechar',
-                    splashRadius: 20,
-                    splashColor: Colors.white,
-                    highlightColor: Colors.white,
+                    size: 20.0,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  tileColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.all(0.0),
-                  visualDensity:
-                      const VisualDensity(horizontal: 0, vertical: 0),
-                  dense: true,
-                  horizontalTitleGap: 0.0,
-                  minLeadingWidth: 0.0,
-                  minVerticalPadding: 0.0,
+                  onTap: () {
+                    setState(() {
+                      temple.isFavorite
+                          ? _firebaseUtils.addFavorite(temple)
+                          : _firebaseUtils.removeFavorite(temple);
+                      temple.toggleFavorite();
+                      Marker updatedMarker = temple.toMarker(
+                        () => _customInfoWindowController.addInfoWindow!(
+                          buildInfoWindow(temple),
+                          temple.latLng,
+                        ),
+                      );
+                      _markers.removeWhere(
+                          (marker) => temple.placesId == marker.markerId.value);
+                      _markers.add(updatedMarker);
+
+                      _customInfoWindowController.hideInfoWindow!();
+                    });
+                  },
                 ),
               ],
             ),
@@ -325,9 +295,49 @@ class LocationMapState extends State<LocationMap>
               icon: Icon(Icons.favorite),
               tooltip: 'Favoritos',
             ),
-            const IconButton(
-              onPressed: null,
-              icon: Icon(Icons.account_circle),
+            IconButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Column(
+                        children: [
+                          Icon(Icons.person, size: 48),
+                          SizedBox(height: 8),
+                          Text('Perfil'),
+                        ],
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Nome: ${FirebaseAuth.instance.currentUser?.displayName ?? 'Desconhecido'}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Email: ${FirebaseAuth.instance.currentUser?.email ?? 'Desconhecido'}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 16),
+                          ListTile(
+                            leading: const Icon(Icons.logout),
+                            title: const Text('Deslogar'),
+                            onTap: () async {
+                              await AutenticacaoServico().deslogarUsuario();
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+              icon: const Icon(Icons.account_circle),
               tooltip: 'Minha conta',
             ),
           ],
