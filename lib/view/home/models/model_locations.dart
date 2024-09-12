@@ -46,4 +46,13 @@ class TempleModel {
       latLng: LatLng(map['lat'], map['lng']),
     );
   }
+
+  Marker toMarker() {
+    return Marker(
+      markerId: MarkerId(placesId),
+      position: latLng,
+      icon: BitmapDescriptor.defaultMarkerWithHue(
+          _isFavorite ? BitmapDescriptor.hueRed : BitmapDescriptor.hueYellow),
+    );
+  }
 }

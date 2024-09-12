@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +20,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -60,29 +59,13 @@ class _SignUpPageState extends State<SignUpPage> {
               return;
             }
 
-            _auth.currentUser!.updateDisplayName(_nameController.text).then(
-              //atualiza o nome do usuário
-              (value) {
-                _firestore
-                    .collection('users')
-                    .doc(userCredential!.user!.uid)
-                    .set(
-                  {
-                    'name': _nameController.text,
-                    'email': _emailController.text
-                  }, // Adiciona o nome e o email ao documento do usuário no firestore (Banco de Dados)
-                ).then(
-                  (value) {
-                    if (mounted) {
-                      Navigator.pushNamed(
-                          context, '/home'); //redireciona para a tela inicial
-                    }
-                  },
-                );
-              },
-            );
+            //atualiza o nome do usuário
+            _auth.currentUser!
+                .updateDisplayName(_nameController.text)
+                .then((value) {});
           },
         );
+        Navigator.pushNamed(context, '/home'); //redireciona para a tela inicial
       } on FirebaseAuthException catch (e) {
         if (e.code == 'weak-password') {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -97,9 +80,10 @@ class _SignUpPageState extends State<SignUpPage> {
             SnackBar(content: Text('Erro ao criar o usuário: ${e.message}')),
           );
         }
-        print(e.code); //Add this line to see other firebase exceptions.
+        print(e); //Add this line to see other firebase exceptions.
       } catch (e) {
-        print(e.toString());
+        // print(e.toString());
+        print(e);
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

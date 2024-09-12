@@ -63,7 +63,7 @@ class LocationMapState extends State<LocationMap>
       Expanded(
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.blue,
+            color: Colors.indigoAccent,
             borderRadius: BorderRadius.circular(4),
           ),
           width: double.infinity,
@@ -76,44 +76,107 @@ class LocationMapState extends State<LocationMap>
                 const SizedBox(
                   width: 8.0,
                 ),
-                Text(temple.name,
-                    style:
-                        const TextStyle(color: Colors.white, fontSize: 10.0)),
+                Text(
+                  temple.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(
                   width: 8.0,
                 ),
-                Text(temple.address,
-                    style:
-                        const TextStyle(color: Colors.white, fontSize: 10.0)),
+                Text(
+                  temple.address,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10.0,
+                  ),
+                ),
                 //botão para favoritar o local, com icone de estrela e fundo amarelo
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      temple.isFavorite
-                          ? _firebaseUtils.addFavorite(temple)
-                          : _firebaseUtils.removeFavorite(temple);
-                      temple.toggleFavorite();
-                    });
-                  },
-                  icon: const Icon(Icons.star),
-                  color: temple.isFavorite ? Colors.amber : Colors.white,
-                  iconSize: 30,
-                  tooltip: 'Favoritar',
-                  splashRadius: 20,
-                  splashColor: temple.isFavorite ? Colors.amber : Colors.white,
-                  highlightColor:
-                      temple.isFavorite ? Colors.amber : Colors.white,
-                )
+                ListTile(
+                  title: Text(
+                    temple.isFavorite ? 'Favorito' : 'Favoritar',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  leading: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        temple.isFavorite
+                            ? _firebaseUtils.addFavorite(temple)
+                            : _firebaseUtils.removeFavorite(temple);
+                        temple.toggleFavorite();
+                      });
+                      _markers.removeWhere(
+                          (marker) => marker.markerId.value == temple.placesId);
+                      _markers.add(temple.toMarker());
+                      _customInfoWindowController.hideInfoWindow!();
+                    },
+                    icon: const Icon(Icons.star),
+                    color: temple.isFavorite ? Colors.amber : Colors.white,
+                    iconSize: 30,
+                    tooltip: temple.isFavorite
+                        ? 'Remover dos favoritos'
+                        : 'Favoritar',
+                    splashRadius: 20,
+                    splashColor:
+                        temple.isFavorite ? Colors.amber : Colors.white,
+                    highlightColor:
+                        temple.isFavorite ? Colors.amber : Colors.white,
+                  ),
+                  trailing: IconButton(
+                    onPressed: () {
+                      _customInfoWindowController.hideInfoWindow!();
+                    },
+                    icon: const Icon(Icons.close),
+                    color: Colors.white,
+                    iconSize: 30,
+                    tooltip: 'Fechar',
+                    splashRadius: 20,
+                    splashColor: Colors.white,
+                    highlightColor: Colors.white,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  tileColor: Colors.transparent,
+                  contentPadding: const EdgeInsets.all(0.0),
+                  visualDensity:
+                      const VisualDensity(horizontal: 0, vertical: 0),
+                  dense: true,
+                  horizontalTitleGap: 0.0,
+                  minLeadingWidth: 0.0,
+                  minVerticalPadding: 0.0,
+                ),
               ],
             ),
           ),
         ),
       ),
+      //triangulo, para parecer um balão
       Container(
-        color: Colors.blue,
-        width: 20.0,
-        height: 10.0,
-      )
+        width: 8.0,
+        height: 8.0,
+        decoration: const BoxDecoration(
+          color: Colors.indigoAccent,
+          shape: BoxShape.circle,
+        ),
+        transform: Matrix4.translationValues(0.0, -16.0, 0.0),
+        alignment: Alignment.center,
+        child: Container(
+          width: 4.0,
+          height: 4.0,
+          decoration: const BoxDecoration(
+            color: Colors.indigoAccent,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
     ]);
   }
 
@@ -165,9 +228,11 @@ class LocationMapState extends State<LocationMap>
               (marker) => marker.markerId == MarkerId(templeList[i].name)
                   ? marker.copyWith(
                       iconParam: BitmapDescriptor.defaultMarkerWithHue(
-                          templeList[i].isFavorite
-                              ? BitmapDescriptor.hueRed
-                              : BitmapDescriptor.hueYellow))
+                        templeList[i].isFavorite
+                            ? BitmapDescriptor.hueRed
+                            : BitmapDescriptor.hueYellow,
+                      ),
+                    )
                   : marker,
             );
           });
@@ -187,7 +252,8 @@ class LocationMapState extends State<LocationMap>
             },
             icon: iconsFromJson[templeList[i].types.first] ??
                 BitmapDescriptor.defaultMarkerWithHue(
-                    BitmapDescriptor.hueYellow),
+                  BitmapDescriptor.hueYellow,
+                ),
           ));
         });
       }
@@ -252,38 +318,40 @@ class LocationMapState extends State<LocationMap>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(children: <Widget>[
-        GoogleMap(
-          onMapCreated: _onMapCreated,
-          initialCameraPosition: CameraPosition(
-            target: _lastMapPosition ?? const LatLng(0, 0),
-            zoom: 18,
+      body: Stack(
+        children: <Widget>[
+          GoogleMap(
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: CameraPosition(
+              target: _lastMapPosition ?? const LatLng(0, 0),
+              zoom: 18,
+            ),
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            style: _mapStyle,
+            mapType: MapType.normal,
+            zoomControlsEnabled: false,
+            zoomGesturesEnabled: true,
+            indoorViewEnabled: false,
+            markers: Set<Marker>.of(_markers),
+            // markers: _markers,
+            // onLongPress: _onMapLongPressed,
+            onCameraMove: _onCameraMove,
+            onTap: (LatLng latLng) {
+              _customInfoWindowController.hideInfoWindow!();
+            },
           ),
-          myLocationEnabled: true,
-          myLocationButtonEnabled: false,
-          style: _mapStyle,
-          mapType: MapType.normal,
-          zoomControlsEnabled: false,
-          zoomGesturesEnabled: true,
-          indoorViewEnabled: false,
-          markers: Set<Marker>.of(_markers),
-          // markers: _markers,
-          // onLongPress: _onMapLongPressed,
-          onCameraMove: _onCameraMove,
-          onTap: (LatLng latLng) {
-            _customInfoWindowController.hideInfoWindow!();
-          },
-        ),
-        CustomInfoWindow(
-          controller: _customInfoWindowController,
-          height: 200,
-          width: 200,
-          offset: 50,
-        ),
-      ]),
+          CustomInfoWindow(
+            controller: _customInfoWindowController,
+            height: 200,
+            width: 200,
+            offset: 50,
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await requestPermission();
+        onPressed: () {
+          requestPermission().then((_) => {});
         },
         tooltip: 'Localização',
         backgroundColor: Colors.blue,
@@ -297,7 +365,7 @@ class LocationMapState extends State<LocationMap>
           children: [
             IconButton(
               //verifica se já está na home, se não estiver, navega para a home
-              onPressed: () => Navigator.pushNamed(context, 'home'),
+              onPressed: () => Navigator.pushNamed(context, '/home'),
               icon: const Icon(Icons.home),
               tooltip: 'Home',
             ),
