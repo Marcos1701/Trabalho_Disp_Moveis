@@ -1,13 +1,21 @@
 import 'dart:convert';
 
 import 'package:logger/logger.dart';
+import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 //usando dotenv
 import 'package:flutter_config/flutter_config.dart';
 
-Future<List<TempleModel>> getTempleList(LatLng latLng, context) async {
+Future<List<TempleModel>> getFavorites() async {
+  final FirebaseUtils firebaseUtils = FirebaseUtils();
+  List<TempleModel> templeList = await firebaseUtils.getAllFavorites();
+
+  return templeList;
+}
+
+Future<List<TempleModel>> getTempleList(LatLng latLng) async {
   var logger = Logger();
   List<String> types = [
     "bakery",
@@ -28,48 +36,56 @@ Future<List<TempleModel>> getTempleList(LatLng latLng, context) async {
     throw Exception('API KEY não encontrada');
   }
 
-  List<TempleModel> templeList = [];
+  List<Future<http.Response>> futures = [];
 
   for (int i = 0; i < types.length; i++) {
-    // try {
+    futures.add(http.get(
+      Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latLng.latitude},${latLng.longitude}&radius=5000&type=${types[i]}&key=$apiKey'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+  }
 
-    http.Response response = await http.get(Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latLng.latitude},${latLng.longitude}&type=${types[i]}&rankby=distance&key=$apiKey&language=pt-BR'));
+  List<TempleModel> templeList = [];
 
-    Map<String, dynamic> json = {};
-    json = jsonDecode(response.body);
+  for (var response in await Future.wait(futures)) {
+    Map<String, dynamic> json = jsonDecode(response.body);
+
     if (json['status'] != 'OK') {
-      // throw Exception(json['error_message']);
       logger.e(json['error_message']);
-      return [];
+      continue;
     }
-    var result = json['results'];
-    // List<TempleModel> templeList = [];
-    // logger.d(json);R
+
+    var result = json['results'] as List;
 
     for (var element in result) {
-      // logger.d(element);
-
       element['types'] = element['types'].toString().toLowerCase().split(',');
 
-      templeList.add(TempleModel(
+      templeList.add(
+        TempleModel(
           name: element['name'],
           address: element['vicinity'], //endereço
           latLng: LatLng(
-              element['geometry']['location']['lat'], //latitude e longitude
-              element['geometry']['location']['lng']),
+            element['geometry']['location']['lat'], //latitude e longitude
+            element['geometry']['location']['lng'],
+          ),
           imageUrl: element['icon'],
           placesId: element['place_id'],
-          types: element['types']));
+          types: element['types'],
+        ),
+      );
     }
-    // } catch (e) {
-    //   logger.e(
-    //     e,
-    //     error: e.toString(),
-    //     time: DateTime.now(),
-    //   ); //exibe uma mensagem de erro na tela, como se fosse um log
-    //   continue;
-    // }
   }
+
+  List<TempleModel> favorites = await getFavorites();
+  for (var favorite in favorites) {
+    print(favorite.isFavorite);
+    templeList.removeWhere((temple) => temple.placesId == favorite.placesId);
+
+    templeList.add(favorite);
+  }
+
   return templeList;
 }

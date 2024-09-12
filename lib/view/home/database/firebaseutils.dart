@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 
 class FirebaseUtils {
-  late final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth auth = FirebaseAuth.instance;
   final Logger _logger = Logger();
 
@@ -21,8 +21,10 @@ class FirebaseUtils {
         .orderBy('name', descending: false)
         .get();
 
+    // _logger.i(querySnapshot.docs[0].data());
+
     return querySnapshot.docs
-        .map((temple) => TempleModel.fromMap(temple.data()))
+        .map((temple) => TempleModel.fromMap(temple.data(), isFavorite: true))
         .toList();
   }
 
@@ -61,16 +63,16 @@ class FirebaseUtils {
   }
 
   //stream builder, para que o firebase sempre atualize os favoritos
-  Stream<List<TempleModel>> getAllFavoritesStream() {
-    return _firestore
-        .collection(auth.currentUser!.uid)
-        .doc('favorites')
-        .collection('temple')
-        .snapshots()
-        .map((event) {
-      return event.docs.map((temple) {
-        return TempleModel.fromMap(temple.data());
-      }).toList();
-    });
-  }
+  // Stream<List<TempleModel>> getAllFavoritesStream() {
+  //   return _firestore
+  //       .collection(auth.currentUser!.uid)
+  //       .doc('favorites')
+  //       .collection('temple')
+  //       .snapshots()
+  //       .map((event) {
+  //     return event.docs.map((temple) {
+  //       return TempleModel.fromMap(temple.data());
+  //     }).toList();
+  //   });
+  // }
 }

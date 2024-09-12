@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:trabalho_loc_ai/view/home/view.dart';
 
 class SingInPage extends StatefulWidget {
   const SingInPage({super.key});
@@ -19,17 +20,7 @@ class _SingInPageState extends State<SingInPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
   void initState() {
-    if (_auth.currentUser != null) {
-      Navigator.pushNamed(context, '/home');
-    }
     super.initState();
   }
 
@@ -53,15 +44,21 @@ class _SingInPageState extends State<SingInPage> {
           }
 
           if (mounted) {
-            print("Logou");
-            Navigator.pushNamed(context, '/home');
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LocationMap(),
+              ),
+            );
           }
         },
       );
     } else {
       // Verifica se o widget ainda está montado antes de mostrar um SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos')),
+        const SnackBar(
+          content: Text('Preencha todos os campos'),
+        ),
       );
     }
   }
@@ -75,10 +72,6 @@ class _SingInPageState extends State<SingInPage> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
-        // leading: IconButton(
-        //   icon: const Icon(Icons.arrow_back),
-        //   onPressed: () => Navigator.pop(context),
-        // ),
       ),
       body: Center(
         child: Padding(
@@ -93,10 +86,7 @@ class _SingInPageState extends State<SingInPage> {
                   decoration: const InputDecoration(
                     labelText: 'E-mail',
                     icon: Icon(Icons.email),
-                    // prefixIcon: Icon(Icons.email),
                     iconColor: Colors.blue,
-                    // prefixIconColor: Colors.blue,
-                    // prefixStyle: TextStyle(color: Colors.blue),
                   ),
                   validator: (value) {
                     if (value == null ||
@@ -121,12 +111,8 @@ class _SingInPageState extends State<SingInPage> {
                   controller: _passwordController,
                   decoration: const InputDecoration(
                     labelText: 'Senha',
-                    // suffixIcon: Icon(Icons.remove_red_eye),
-                    // suffixIconColor: Colors.blue,
                     iconColor: Colors.blue,
                     icon: Icon(Icons.lock_outlined),
-                    // prefixIcon: Icon(Icons.remove_red_eye),
-                    // prefixIconColor: Colors.blue,
                   ),
                   enableSuggestions: false,
                   obscureText: true,

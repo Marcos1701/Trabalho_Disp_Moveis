@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:trabalho_loc_ai/view/auth/sign_in/view.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
@@ -46,7 +45,7 @@ class LocationMapState extends State<LocationMap>
 
   @override
   void dispose() {
-    _customInfoWindowController.dispose();
+    _controller.future.then((controller) => controller.dispose());
     super.dispose();
   }
 
@@ -111,11 +110,18 @@ class LocationMapState extends State<LocationMap>
                             ? _firebaseUtils.addFavorite(temple)
                             : _firebaseUtils.removeFavorite(temple);
                         temple.toggleFavorite();
+                        Marker updatedMarker = temple.toMarker(
+                          () => _customInfoWindowController.addInfoWindow!(
+                            buildInfoWindow(temple),
+                            temple.latLng,
+                          ),
+                        );
+                        _markers.removeWhere((marker) =>
+                            temple.placesId == marker.markerId.value);
+                        _markers.add(updatedMarker);
+
+                        _customInfoWindowController.hideInfoWindow!();
                       });
-                      _markers.removeWhere(
-                          (marker) => marker.markerId.value == temple.placesId);
-                      _markers.add(temple.toMarker());
-                      _customInfoWindowController.hideInfoWindow!();
                     },
                     icon: const Icon(Icons.star),
                     color: temple.isFavorite ? Colors.amber : Colors.white,
@@ -182,8 +188,7 @@ class LocationMapState extends State<LocationMap>
 
   Future<void> _getData() async {
     if (_lastMapPosition != null) {
-      List<TempleModel> templeList =
-          await getTempleList(_lastMapPosition!, context);
+      List<TempleModel> templeList = await getTempleList(_lastMapPosition!);
 
       for (int i = 0; i < templeList.length; i++) {
         //verifica se o local já existe no mapa
@@ -194,67 +199,13 @@ class LocationMapState extends State<LocationMap>
 
         setState(() {
           _markers.add(
-            Marker(
-              markerId: MarkerId(templeList[i].placesId),
-              position: templeList[i].latLng,
-              onTap: () {
-                //ao clicar no local, o mesmo torna-se selecionado
-                _customInfoWindowController.addInfoWindow!(
-                  buildInfoWindow(templeList[i]),
-                  templeList[i].latLng,
-                );
-              },
-              icon: iconsFromJson[templeList[i].types.first] ??
-                  BitmapDescriptor.defaultMarker,
-              // icon:
-            ),
-          );
-        });
-      }
-    }
-  }
-
-  Future<void> _getFavorites() async {
-    if (_lastMapPosition != null) {
-      List<TempleModel> templeList = await _firebaseUtils.getAllFavorites();
-
-      for (int i = 0; i < templeList.length; i++) {
-        //verifica se o local já existe no mapa
-        if (_markers
-            .any((marker) => marker.markerId == MarkerId(templeList[i].name))) {
-          // altera o status do local para favoritado
-          setState(() {
-            _markers.map(
-              (marker) => marker.markerId == MarkerId(templeList[i].name)
-                  ? marker.copyWith(
-                      iconParam: BitmapDescriptor.defaultMarkerWithHue(
-                        templeList[i].isFavorite
-                            ? BitmapDescriptor.hueRed
-                            : BitmapDescriptor.hueYellow,
-                      ),
-                    )
-                  : marker,
-            );
-          });
-          continue;
-        }
-
-        setState(() {
-          _markers.add(Marker(
-            markerId: MarkerId(templeList[i].placesId),
-            position: templeList[i].latLng,
-            onTap: () {
-              //ao clicar no local, o mesmo torna-se selecionado
-              _customInfoWindowController.addInfoWindow!(
+            templeList[i].toMarker(
+              () => _customInfoWindowController.addInfoWindow!(
                 buildInfoWindow(templeList[i]),
                 templeList[i].latLng,
-              );
-            },
-            icon: iconsFromJson[templeList[i].types.first] ??
-                BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueYellow,
-                ),
-          ));
+              ),
+            ),
+          );
         });
       }
     }
@@ -286,28 +237,25 @@ class LocationMapState extends State<LocationMap>
         _lastMapPosition = LatLng(locAtual.latitude, locAtual.longitude);
       });
       await _getData();
-      await _getFavorites();
     }
     return;
   }
 
+  void carregarEstilo() {
+    Future.delayed(Duration.zero, () {
+      setState(() {
+        rootBundle.loadString('assets/map_style.txt').then((string) {
+          _mapStyle = string;
+        });
+      });
+    }); // para evitar erros durante o build
+  }
+
   @override
   void initState() {
+    carregarEstilo();
+    requestPermission();
     super.initState();
-
-    if (FirebaseAuth.instance.currentUser == null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const SingInPage()),
-      );
-    }
-
-    // carrega o arquivo de estilo do mapa
-    setState(() {
-      rootBundle.loadString('assets/map_style.txt').then((string) {
-        _mapStyle = string;
-      });
-    });
-    requestPermission().then((_) => {});
   }
 
   void _onCameraMove(CameraPosition position) {
@@ -334,8 +282,6 @@ class LocationMapState extends State<LocationMap>
             zoomGesturesEnabled: true,
             indoorViewEnabled: false,
             markers: Set<Marker>.of(_markers),
-            // markers: _markers,
-            // onLongPress: _onMapLongPressed,
             onCameraMove: _onCameraMove,
             onTap: (LatLng latLng) {
               _customInfoWindowController.hideInfoWindow!();
@@ -351,7 +297,7 @@ class LocationMapState extends State<LocationMap>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          requestPermission().then((_) => {});
+          requestPermission();
         },
         tooltip: 'Localização',
         backgroundColor: Colors.blue,

@@ -36,8 +36,8 @@ class TempleModel {
     };
   }
 
-  factory TempleModel.fromMap(Map<String, dynamic> map) {
-    return TempleModel(
+  factory TempleModel.fromMap(Map<String, dynamic> map, {bool? isFavorite}) {
+    TempleModel temple = TempleModel(
       name: map['name'],
       address: map['address'],
       types: List<String>.from(map['types']),
@@ -45,14 +45,24 @@ class TempleModel {
       placesId: map['placesId'],
       latLng: LatLng(map['lat'], map['lng']),
     );
+
+    if (isFavorite != null && isFavorite) {
+      temple.toggleFavorite();
+    }
+
+    return temple;
   }
 
-  Marker toMarker() {
+  Marker toMarker(
+    void Function()? onTap,
+  ) {
     return Marker(
       markerId: MarkerId(placesId),
       position: latLng,
       icon: BitmapDescriptor.defaultMarkerWithHue(
-          _isFavorite ? BitmapDescriptor.hueRed : BitmapDescriptor.hueYellow),
+        _isFavorite ? BitmapDescriptor.hueYellow : BitmapDescriptor.hueRed,
+      ),
+      onTap: onTap,
     );
   }
 }

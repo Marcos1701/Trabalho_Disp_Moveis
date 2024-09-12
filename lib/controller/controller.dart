@@ -1,6 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:trabalho_loc_ai/view/auth/sign_in/view.dart';
-import 'package:trabalho_loc_ai/view/auth/sign_up/view.dart';
 import 'package:trabalho_loc_ai/view/home/view.dart';
 
 class MyApp extends StatelessWidget {
@@ -8,12 +8,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SingInPage(),
-        '/home': (context) => const LocationMap(),
-        '/signup': (context) => const SignUpPage(),
+    return const MaterialApp(
+      home: Roteador(),
+    );
+  }
+}
+
+class Roteador extends StatelessWidget {
+  const Roteador({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.userChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return const LocationMap();
+        }
+        return const SingInPage();
       },
     );
   }

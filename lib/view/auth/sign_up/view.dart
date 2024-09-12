@@ -24,9 +24,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   void initState() {
-    if (_auth.currentUser != null) {
-      Navigator.pushNamed(context, '/home');
-    }
     super.initState();
   }
 
@@ -80,10 +77,11 @@ class _SignUpPageState extends State<SignUpPage> {
             SnackBar(content: Text('Erro ao criar o usuário: ${e.message}')),
           );
         }
-        print(e); //Add this line to see other firebase exceptions.
       } catch (e) {
         // print(e.toString());
-        print(e);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao criar o usuário: ${e.toString()}')),
+        );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -235,11 +233,3 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 }
-
-// Erro 1: O código não estava tratando o erro de criação de usuário.
-// Erro 2: O código não estava redirecionando o usuário para a tela de login
-// após a criação de usuário.
-// Correção: Adicionei um try/catch para tratar o erro de criação de
-// usuário e redirecionar o usuário para a tela de login após a
-// criação de usuário.
-
