@@ -22,6 +22,7 @@ class FirebaseUtils {
         .get();
 
     // _logger.i(querySnapshot.docs[0].data());
+    print(querySnapshot.docs);
 
     return querySnapshot.docs
         .map((temple) => TempleModel.fromMap(temple.data(), isFavorite: true))
@@ -32,7 +33,6 @@ class FirebaseUtils {
     _logger.i('addFavorite');
 
     var userId = auth.currentUser!.uid;
-
     try {
       await _firestore
           .collection(userId)

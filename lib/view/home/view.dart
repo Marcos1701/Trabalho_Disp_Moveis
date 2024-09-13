@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -27,18 +28,7 @@ class LocationMapState extends State<LocationMap>
 
   final FirebaseUtils _firebaseUtils = FirebaseUtils();
 
-  // Json com os icones para cada tipo de local
-  final iconsFromJson = {
-    'bakery': BitmapDescriptor.defaultMarker,
-    'bar': BitmapDescriptor.defaultMarker,
-    'cafe': BitmapDescriptor.defaultMarker,
-    'convenience_store': BitmapDescriptor.defaultMarker,
-    'meal_delivery': BitmapDescriptor.defaultMarker,
-    'meal_takeaway': BitmapDescriptor.defaultMarker,
-    'restaurant': BitmapDescriptor.defaultMarker,
-    'shopping_mall': BitmapDescriptor.defaultMarker,
-    'supermarket': BitmapDescriptor.defaultMarker,
-  };
+  late bool _isLoading = true;
 
   String _mapStyle = '';
 
@@ -59,105 +49,169 @@ class LocationMapState extends State<LocationMap>
   Widget buildInfoWindow(TempleModel temple) {
     // Widget para mostrar o nome e o endereço do local
 
-    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Expanded(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.indigoAccent,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          width: double.infinity,
-          height: double.infinity,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(
-                  width: 8.0,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.indigoAccent,
+              borderRadius: BorderRadius.circular(8.0),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black,
+                  offset: Offset(0.0, 1.0),
+                  blurRadius: 2.0,
                 ),
-                Text(
-                  temple.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.0,
-                    fontWeight: FontWeight.bold,
+              ],
+              border: Border.all(color: Colors.white, width: 2.0),
+              image: DecorationImage(
+                image: Image.network(temple.imageUrl).image,
+                fit: BoxFit.cover,
+              ),
+            ),
+            width: double.infinity,
+            height: double.infinity,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 8.0,
                   ),
-                ),
-                const SizedBox(
-                  width: 8.0,
-                ),
-                Text(
-                  temple.address,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.0,
+                  Text(
+                    temple.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.bold,
+                      shadows: <Shadow>[
+                        Shadow(
+                          offset: Offset(1.0, 1.0),
+                          blurRadius: 2.0,
+                          color: Color.fromARGB(255, 0, 0, 0),
+                        ),
+                      ],
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                //botão para favoritar o local, com icone de estrela e fundo amarelo
-                ListTile(
-                  title: Text(
-                    temple.isFavorite ? 'Favorito' : 'Favoritar',
+                  const SizedBox(
+                    width: 10.0,
+                    height: 8.0,
+                  ),
+                  Text(
+                    temple.address,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10.0,
-                      fontWeight: FontWeight.bold,
+                      shadows: <Shadow>[
+                        Shadow(
+                          offset: Offset(1.0, 1.0),
+                          blurRadius: 2.0,
+                          color: Color.fromARGB(255, 0, 0, 0),
+                        ),
+                      ],
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
+                    textDirection: TextDirection.ltr,
+                  ),
+                  const SizedBox(height: 16.0),
+                  //botão para favoritar o local, com icone de estrela e fundo amarelo
+                  Container(
+                    width: 160.0,
+                    decoration: BoxDecoration(
+                      color: Colors.yellow,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        width: 1.0,
+                        color: temple.isFavorite ? Colors.yellow : Colors.white,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black,
+                          blurRadius: 5.0,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ListTile(
+                      title: Text(
+                        temple.isFavorite ? 'Favorito' : 'Favoritar',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      leading: Icon(
+                        temple.isFavorite
+                            ? Icons.star
+                            : Icons.star_border_outlined,
+                        color: Colors.white,
+                        size: 30.0,
+                      ),
+                      onTap: () {
+                        setState(() {
+                          temple.isFavorite
+                              ? _firebaseUtils
+                                  .removeFavorite(temple)
+                                  .then((_) {})
+                              : _firebaseUtils.addFavorite(temple).then((_) {});
+                          temple.toggleFavorite();
+                          Marker updatedMarker = temple.toMarker(
+                            () => _customInfoWindowController.addInfoWindow!(
+                              buildInfoWindow(temple),
+                              temple.latLng,
+                            ),
+                          );
+                          _markers.removeWhere((marker) =>
+                              temple.placesId == marker.markerId.value);
+                          _markers.add(updatedMarker);
+
+                          _customInfoWindowController.hideInfoWindow!();
+                        });
+                      },
                     ),
                   ),
-                  leading: Icon(
-                    temple.isFavorite ? Icons.star : Icons.star_border_outlined,
-                    color: Colors.white,
-                    size: 20.0,
-                  ),
-                  onTap: () {
-                    setState(() {
-                      temple.isFavorite
-                          ? _firebaseUtils.addFavorite(temple)
-                          : _firebaseUtils.removeFavorite(temple);
-                      temple.toggleFavorite();
-                      Marker updatedMarker = temple.toMarker(
-                        () => _customInfoWindowController.addInfoWindow!(
-                          buildInfoWindow(temple),
-                          temple.latLng,
-                        ),
-                      );
-                      _markers.removeWhere(
-                          (marker) => temple.placesId == marker.markerId.value);
-                      _markers.add(updatedMarker);
-
-                      _customInfoWindowController.hideInfoWindow!();
-                    });
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
-      //triangulo, para parecer um balão
-      Container(
-        width: 8.0,
-        height: 8.0,
-        decoration: const BoxDecoration(
-          color: Colors.indigoAccent,
-          shape: BoxShape.circle,
-        ),
-        transform: Matrix4.translationValues(0.0, -16.0, 0.0),
-        alignment: Alignment.center,
-        child: Container(
-          width: 4.0,
-          height: 4.0,
+        //triangulo, para parecer um balão
+        Container(
+          width: 8.0,
+          height: 8.0,
           decoration: const BoxDecoration(
             color: Colors.indigoAccent,
             shape: BoxShape.circle,
           ),
+          transform: Matrix4.translationValues(0.0, -16.0, 0.0),
+          alignment: Alignment.center,
+          child: Container(
+            width: 4.0,
+            height: 4.0,
+            decoration: const BoxDecoration(
+              color: Colors.indigoAccent,
+              shape: BoxShape.circle,
+            ),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   Future<void> _getData() async {
     if (_lastMapPosition != null) {
+      setState(() {
+        _isLoading = true;
+      });
       List<TempleModel> templeList = await getTempleList(_lastMapPosition!);
 
       for (int i = 0; i < templeList.length; i++) {
@@ -178,6 +232,9 @@ class LocationMapState extends State<LocationMap>
           );
         });
       }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -262,6 +319,21 @@ class LocationMapState extends State<LocationMap>
             height: 200,
             width: 200,
             offset: 50,
+          ),
+          // tela de carregamento
+          Visibility(
+            visible: _isLoading,
+            maintainState: true,
+            maintainAnimation: true,
+            child: Container(
+              color: Colors.transparent.withOpacity(0.1),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ),
           ),
         ],
       ),
