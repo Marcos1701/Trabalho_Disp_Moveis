@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trabalho_loc_ai/main.dart';
-import 'package:trabalho_loc_ai/view/auth/sign_in/view.dart';
-import 'package:trabalho_loc_ai/view/auth/sign_up/view.dart';
+import 'package:trabalho_loc_ai/view/auth/auth_screen/view.dart';
 import 'package:trabalho_loc_ai/view/home/view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -17,11 +16,6 @@ class MyApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
       home: const RoteadorTela(),
-      routes: {
-        '/login': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(),
-        '/home': (context) => const LocationMap(),
-      },
     );
   }
 }

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trabalho_loc_ai/_comum/meu_snackbar.dart';
 import 'package:trabalho_loc_ai/view/auth/services/autenticacao_servico.dart';
-import 'package:trabalho_loc_ai/view/auth/sign_up/view.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,6 +10,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginState extends State<LoginPage> {
+  bool queroEntrar = true;
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -21,7 +21,7 @@ class _LoginState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login'),
+        title: Text((queroEntrar) ? 'Entrar' : 'Cadastrar'),
       ),
       body: Center(
         child: Padding(
@@ -143,33 +143,126 @@ class _LoginState extends State<LoginPage> {
                   ),
                   */
                   const SizedBox(height: 20),
+                  Visibility(
+                    visible: !queroEntrar, 
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            keyboardType: TextInputType.visiblePassword,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            obscureText: true,
+                            validator: (String? value) {
+                              if (value!.isEmpty) {
+                                return "O campo Confirme a senha deve ser preenchido.";
+                              }
+                              if (value.length < 8) {
+                                return "O campo Confirme a senha deve ter pelo menos 8 caracteres.";
+                              }
+                              if (value != _passwordController.text) {
+                                return "As senhas devem ser iguais.";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              labelText: 'Confirme a senha',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                                borderSide: const BorderSide(
+                                    color: Colors.black, width: 2),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                                borderSide: const BorderSide(
+                                    color: Colors.blue, width: 4),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                                borderSide: const BorderSide(
+                                    color: Colors.red, width: 2),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                                borderSide: const BorderSide(
+                                    color: Colors.red, width: 4),
+                              )
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            controller: _nameController,
+                            keyboardType: TextInputType.name,
+                            autofillHints: const [AutofillHints.name],
+                            textInputAction: TextInputAction.next,
+                            validator: (String? value) {
+                              if (value!.isEmpty) {
+                                return "O campo Nome Completo deve ser preenchido.";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              labelText: 'Nome Completo',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                                borderSide: const BorderSide(
+                                    color: Colors.black, width: 2),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                                borderSide: const BorderSide(
+                                    color: Colors.blue, width: 4),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                                borderSide: const BorderSide(
+                                    color: Colors.red, width: 2),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(64),
+                                borderSide: const BorderSide(
+                                    color: Colors.red, width: 4),
+                              )
+                            ),
+                          ),
+                        ),
+                      ]
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size.fromHeight(50),
-                      backgroundColor: Colors.green,
+                      backgroundColor: (queroEntrar)? Colors.green : Colors.blue,
                       shape: const RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(0)),
                       ),
                     ),
                     onPressed: () async {
-                      botaoLogin();
+                      botaoPrincipal();
                     },
-                    child: const Text('Entrar'),
+                    child: Text((queroEntrar) ? 'Entrar' : 'Cadastrar'),
                   ),
                   const SizedBox(height: 20),
                   const Divider(),
                   TextButton(
                     onPressed: () {
-                      // Navigator.pushNamed(context, '/register');
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) { 
-                          return const RegisterPage(); 
-                        }),
-                      );
+                      setState(() {
+                        queroEntrar = !queroEntrar;
+                      });
                     },
-                    child: const Text(
-                        'Ainda não tem uma conta? Clique aqui!'),
+                    child: Text(
+                        (queroEntrar) ? 'Ainda não tem uma conta? Clique aqui!' : 'Já tem uma conta? Clique aqui!'),
                   )
                 ],
               ),
@@ -180,22 +273,43 @@ class _LoginState extends State<LoginPage> {
     );
   }
 
-  botaoLogin() {
+  botaoPrincipal() {
+    String nome = _nameController.text;
     String email = _emailController.text;
     String senha = _passwordController.text;
 
     if (_formKey.currentState!.validate()) {
-      _autenticacaoServico
-      .logarUsuario(email: email, senha: senha)
-      .then(
-        (String? erro) {
-          if (erro != null) {
-            mostrarSnackBar(context: context, texto: erro);
-          }
-        },
-      );
+      if (queroEntrar) {
+        _autenticacaoServico
+        .logarUsuario(email: email, senha: senha)
+        .then(
+          (String? erro) {
+            if (erro != null) {
+              mostrarSnackBar(context: context, texto: erro);
+            }
+          },
+        );
+        print('Entrada validada');
+      } else {
+        _autenticacaoServico
+        .cadastrarUsuario(nome: nome, email: email, senha: senha)
+        .then(
+          (String? erro) {
+            if (erro != null) {
+              mostrarSnackBar(context: context, texto: erro);
+            } else {
+              mostrarSnackBar(
+                context: context,
+                texto: 'Cadastro efetuado com sucesso!',
+                isError: false,
+              );
+            }
+          },
+        );
+        print('Cadastro validado');
+      }
     } else {
-      print('Login falhou!');
+      print('Form inválido');
     }
   }
 }

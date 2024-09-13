@@ -53,6 +53,12 @@ class LocationMapState extends State<LocationMap>
     _customInfoWindowController.googleMapController = controller;
   }
 
+    void moveToLocation(LatLng latLng) {
+    _controller.future.then((controller) {
+      controller.animateCamera(CameraUpdate.newLatLng(latLng));
+    });
+  }
+
   Widget buildInfoWindow(TempleModel temple) {
     // Widget para mostrar o nome e o endereço do local
 
@@ -370,6 +376,8 @@ class LocationMapState extends State<LocationMap>
     return;
   }
 
+  
+
   void carregarEstilo() {
     Future.delayed(Duration.zero, () {
       setState(() {
@@ -461,15 +469,201 @@ class LocationMapState extends State<LocationMap>
               tooltip: 'Home',
             ),
             //aba para visualizar os estabelecimentos próximos, em forma de lista
-            const IconButton(
-                onPressed: null,
-                icon: Icon(Icons.list),
-                tooltip: 'Lista de estabelecimentos'),
-            const IconButton(
-              onPressed: null,
-              icon: Icon(Icons.favorite),
-              tooltip: 'Favoritos',
+            IconButton(
+  onPressed: () {
+    // Verifique se _lastMapPosition está definido
+    if (_lastMapPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Localização não disponível.')),
+      );
+      return;
+    }
+
+    LatLng currentLocation = _lastMapPosition!; // Use o valor de _lastMapPosition
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Column(
+            children: [
+              Icon(Icons.list, size: 48),
+              SizedBox(height: 8),
+              Text('Lista de Estabelecimentos'),
+            ],
+          ),
+          contentPadding: const EdgeInsets.all(16),
+          content: SizedBox(
+            width: double.maxFinite, // Para ocupar a largura total
+            child: FutureBuilder<List<TempleModel>>(
+              future: getPlaces(currentLocation), // Chama a função da API
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('Nenhum estabelecimento encontrado.'));
+                }
+
+                final establishments = snapshot.data!;
+
+                return ListView.builder(
+                  shrinkWrap: true, // Permite que a lista tenha uma altura mínima
+                  physics: const AlwaysScrollableScrollPhysics(), // Permite rolagem
+                  itemCount: establishments.length,
+                  itemBuilder: (context, index) {
+                    final temple = establishments[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0), // Espaçamento entre os cards
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(8.0),
+                        title: Row(
+                          children: [
+                            // Ícone do estabelecimento com borda arredondada
+                            if (temple.imageUrl != null) // Verifica se a URL da imagem existe
+                              Container(
+                                padding: const EdgeInsets.all(4.0), // Espaçamento interno
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey, width: 1), // Borda
+                                  borderRadius: BorderRadius.circular(20.0), // Bordas arredondadas
+                                ),
+                                child: ClipOval( // Faz o ícone ser circular
+                                  child: Image.network(
+                                    temple.imageUrl,
+                                    width: 40, // Largura do ícone
+                                    height: 40, // Altura do ícone
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            // Espaçamento entre o ícone e as informações
+                            const SizedBox(width: 8.0), // Espaçamento fixo
+                            // Nome e endereço do estabelecimento
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    temple.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(temple.address),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                           moveToLocation(temple.latLng);
+
+                          Navigator.of(context).pop(); // Fecha o diálogo
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
             ),
+          ),
+        );
+      },
+    );
+  },
+  icon: const Icon(Icons.list),
+  tooltip: 'Lista de estabelecimentos',
+),
+            IconButton(
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Column(
+            children: [
+              Icon(Icons.favorite, size: 48),
+              SizedBox(height: 8),
+              Text('Favoritos'),
+            ],
+          ),
+          contentPadding: const EdgeInsets.all(16),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: FutureBuilder<List<TempleModel>>(
+              future: getTempleList(_lastMapPosition!), // Chama a função que busca estabelecimentos
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('Nenhum favorito encontrado.'));
+                }
+
+                final establishments = snapshot.data!;
+                final favorites = establishments.where((temple) => temple.isFavorite).toList(); // Filtra os favoritos
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: favorites.length,
+                  itemBuilder: (context, index) {
+                    final temple = favorites[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0), // Espaçamento entre os cards
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(8.0), // Espaçamento interno
+                        title: Row(
+                          children: [
+                            if (temple.imageUrl != null)
+                              Container(
+                                padding: const EdgeInsets.all(4.0),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey, width: 1),
+                                  borderRadius: BorderRadius.circular(20.0),
+                                ),
+                                child: ClipOval(
+                                  child: Image.network(
+                                    temple.imageUrl,
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(width: 8.0), // Espaçamento fixo
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    temple.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(temple.address),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          moveToLocation(temple.latLng); // Move o mapa para o favorito
+                          Navigator.of(context).pop(); // Fecha o diálogo
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  },
+  icon: const Icon(Icons.favorite),
+  tooltip: 'Favoritos',
+),
             IconButton(
               onPressed: () {
                 showDialog(

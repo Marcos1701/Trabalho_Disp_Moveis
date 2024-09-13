@@ -89,3 +89,71 @@ Future<List<TempleModel>> getTempleList(LatLng latLng) async {
 
   return templeList;
 }
+
+
+Future<List<TempleModel>> getPlaces(LatLng latLng) async {
+  var logger = Logger();
+  List<String> types = [
+    "bakery",
+    "bar",
+    "cafe",
+    "convenience_store",
+    "meal_delivery",
+    "meal_takeaway",
+    "restaurant",
+    "shopping_mall",
+    "supermarket",
+  ];
+  String apiKey = await FlutterConfig.get('ApiKey');
+
+  if (apiKey.isEmpty) {
+    logger.e(
+        'API KEY não encontrada, resumindo a situação: A aplicação foi de arrasta para cima!!!');
+    throw Exception('API KEY não encontrada');
+  }
+
+  List<Future<http.Response>> futures = [];
+
+  for (int i = 0; i < types.length; i++) {
+    futures.add(http.get(
+      Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latLng.latitude},${latLng.longitude}&radius=5000&type=${types[i]}&key=$apiKey'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+  }
+
+  List<TempleModel> templeList = [];
+
+  for (var response in await Future.wait(futures)) {
+    Map<String, dynamic> json = jsonDecode(response.body);
+
+    if (json['status'] != 'OK') {
+      logger.e(json['error_message']);
+      continue;
+    }
+
+    var result = json['results'] as List;
+
+    for (var element in result) {
+      element['types'] = element['types'].toString().toLowerCase().split(',');
+
+      templeList.add(
+        TempleModel(
+          name: element['name'],
+          address: element['vicinity'], //endereço
+          latLng: LatLng(
+            element['geometry']['location']['lat'], //latitude e longitude
+            element['geometry']['location']['lng'],
+          ),
+          imageUrl: element['icon'],
+          placesId: element['place_id'],
+          types: element['types'],
+        ),
+      );
+    }
+  }
+
+  return templeList;
+}
