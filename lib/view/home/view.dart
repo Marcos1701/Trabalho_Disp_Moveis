@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_config/flutter_config.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -25,6 +27,11 @@ class LocationMapState extends State<LocationMap>
   final Set<Marker> _markers = {};
   final CustomInfoWindowController _customInfoWindowController =
       CustomInfoWindowController();
+
+  final Set<Polyline> _polylines = {};
+  List<LatLng> polylineCoordinates = [];
+  PolylinePoints polylinePoints = PolylinePoints();
+  List<LatLng> routeCoords = [];
 
   final FirebaseUtils _firebaseUtils = FirebaseUtils();
 
@@ -123,61 +130,106 @@ class LocationMapState extends State<LocationMap>
                   ),
                   const SizedBox(height: 16.0),
                   //botão para favoritar o local, com icone de estrela e fundo amarelo
-                  Container(
-                    width: 160.0,
-                    decoration: BoxDecoration(
-                      color: Colors.yellow,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        width: 1.0,
-                        color: temple.isFavorite ? Colors.yellow : Colors.white,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black,
-                          blurRadius: 5.0,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        temple.isFavorite ? 'Favorito' : 'Favoritar',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      leading: Icon(
-                        temple.isFavorite
-                            ? Icons.star
-                            : Icons.star_border_outlined,
-                        color: Colors.white,
-                        size: 30.0,
-                      ),
-                      onTap: () {
-                        setState(() {
-                          temple.isFavorite
-                              ? _firebaseUtils
-                                  .removeFavorite(temple)
-                                  .then((_) {})
-                              : _firebaseUtils.addFavorite(temple).then((_) {});
-                          temple.toggleFavorite();
-                          Marker updatedMarker = temple.toMarker(
-                            () => _customInfoWindowController.addInfoWindow!(
-                              buildInfoWindow(temple),
-                              temple.latLng,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 70.0,
+                        decoration: BoxDecoration(
+                          color: Colors.yellow,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            width: 1.0,
+                            color: temple.isFavorite
+                                ? Colors.yellow
+                                : Colors.white,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black,
+                              blurRadius: 5.0,
+                              offset: Offset(0, 2),
                             ),
-                          );
-                          _markers.removeWhere((marker) =>
-                              temple.placesId == marker.markerId.value);
-                          _markers.add(updatedMarker);
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: temple.isFavorite
+                              ? const Icon(Icons.star)
+                              : const Icon(Icons.star_border_outlined),
+                          color: Colors.white,
+                          iconSize: 24.0,
+                          onPressed: () {
+                            setState(
+                              () {
+                                temple.isFavorite
+                                    ? _firebaseUtils
+                                        .removeFavorite(temple)
+                                        .then((_) {})
+                                    : _firebaseUtils
+                                        .addFavorite(temple)
+                                        .then((_) {});
+                                temple.toggleFavorite();
+                                Marker updatedMarker = temple.toMarker(
+                                  () => _customInfoWindowController
+                                      .addInfoWindow!(
+                                    buildInfoWindow(temple),
+                                    temple.latLng,
+                                  ),
+                                );
+                                _markers.removeWhere((marker) =>
+                                    temple.placesId == marker.markerId.value);
+                                _markers.add(updatedMarker);
 
-                          _customInfoWindowController.hideInfoWindow!();
-                        });
-                      },
-                    ),
+                                _customInfoWindowController.hideInfoWindow!();
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 10.0,
+                      ),
+                      //botão para calcular a rota
+                      Container(
+                        width: 70.0,
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(width: 1.0, color: Colors.white),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black,
+                              blurRadius: 5.0,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.directions),
+                          color: Colors.white,
+                          iconSize: 24.0,
+                          onPressed: () async {
+                            // print('clicked');
+                            String apiKey = await FlutterConfig.get('ApiKey');
+
+                            if (apiKey.isEmpty) {
+                              print(
+                                  'API KEY não encontrada, resumindo a situação: A aplicação foi de arrasta para cima!!!');
+                              throw Exception('API KEY não encontrada');
+                            }
+
+                            _getPolyline(
+                              apiKey,
+                              temple.latLng,
+                            );
+
+                            _customInfoWindowController.hideInfoWindow!();
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -205,6 +257,56 @@ class LocationMapState extends State<LocationMap>
         ),
       ],
     );
+  }
+
+  _getPolyline(
+    String apikey,
+    LatLng destination,
+  ) async {
+    _controller.future.then(
+      (GoogleMapController controler) {
+        controler.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+          target: destination,
+          zoom: 14.0,
+        )));
+      },
+    );
+
+    // Adiciona um marcador na
+
+    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+      googleApiKey: apikey,
+      request: PolylineRequest(
+        origin: PointLatLng(
+          _lastMapPosition!.latitude,
+          _lastMapPosition!.longitude,
+        ),
+        destination: PointLatLng(destination.latitude, destination.longitude),
+        mode: TravelMode.driving,
+        // wayPoints: [
+        //   PolylineWayPoint(
+        //       location:
+        //           '${_lastMapPosition!.latitude},${_lastMapPosition!.longitude}')
+        // ],
+      ),
+    );
+    if (result.points.isNotEmpty) {
+      result.points.forEach((PointLatLng point) {
+        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+      });
+    }
+
+    setState(() {
+      _polylines.clear();
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId('polyline'),
+          color: Colors.blue,
+          width: 5,
+          points: polylineCoordinates,
+        ),
+      );
+    });
   }
 
   Future<void> _getData() async {
@@ -309,6 +411,7 @@ class LocationMapState extends State<LocationMap>
             zoomGesturesEnabled: true,
             indoorViewEnabled: false,
             markers: Set<Marker>.of(_markers),
+            polylines: Set<Polyline>.of(_polylines),
             onCameraMove: _onCameraMove,
             onTap: (LatLng latLng) {
               _customInfoWindowController.hideInfoWindow!();

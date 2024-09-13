@@ -33,21 +33,6 @@
   <title>trabalho_loc_ai</title>
   <link rel="manifest" href="manifest.json">
 
-  <script>
-    import * as dotenv from 'dotenv';
-
-    dotenv.config();
-    const apikey = process.env['ApiKey'];
-
-    console.log(apikey);
-
-    if (apikey) {
-      const base = "https://maps.googleapis.com/maps/api/js?key=" + apikey + "&libraries=places";
-      const script = document.createElement('script');
-      script.src = base;
-      document.getElementsByTagName('head')[0].appendChild(script);
-    }
-  </script>
 
   <script>
     // The value below is injected by flutter build, do not touch.
