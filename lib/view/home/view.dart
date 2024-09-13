@@ -362,8 +362,62 @@ class LocationMapState extends State<LocationMap>
                 onPressed: null,
                 icon: Icon(Icons.list),
                 tooltip: 'Lista de estabelecimentos'),
-            const IconButton(
-              onPressed: null,
+            IconButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Column(
+                        children: [
+                          Icon(Icons.favorite, size: 48),
+                          SizedBox(height: 8),
+                          Text('Favoritos'),
+                        ],
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FutureBuilder<List<TempleModel>>(
+                              future: FirebaseUtils().getAllFavorites(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  final favorites = snapshot.data!;
+                                  return Scaffold(
+                                    appBar: AppBar(
+                                      title: Text('Favorites'),
+                                    ),
+                                    body: ListView.builder(
+                                      itemCount: favorites.length,
+                                      itemBuilder: (context, index) {
+                                        final temple = favorites[index];
+
+                                        return ListTile(
+                                          title: Text(temple.name),
+                                          subtitle: Text(temple.address),
+                                        );
+                                      },
+                                    ),
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return Center(
+                                      child: Text('Error: ${snapshot.error}'));
+                                }
+
+                                return Center(
+                                    child: CircularProgressIndicator());
+                              },
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
               icon: Icon(Icons.favorite),
               tooltip: 'Favoritos',
             ),
