@@ -471,64 +471,96 @@ class LocationMapState extends State<LocationMap>
   tooltip: 'Lista de estabelecimentos',
 ),
             IconButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Column(
-                        children: [
-                          Icon(Icons.favorite, size: 48),
-                          SizedBox(height: 8),
-                          Text('Favoritos'),
-                        ],
-                      ),
-                      contentPadding: const EdgeInsets.all(16),
-                      content: SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Column(
+            children: [
+              Icon(Icons.favorite, size: 48),
+              SizedBox(height: 8),
+              Text('Favoritos'),
+            ],
+          ),
+          contentPadding: const EdgeInsets.all(16),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: FutureBuilder<List<TempleModel>>(
+              future: getTempleList(_lastMapPosition!), // Chama a função que busca estabelecimentos
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('Nenhum favorito encontrado.'));
+                }
+
+                final establishments = snapshot.data!;
+                final favorites = establishments.where((temple) => temple.isFavorite).toList(); // Filtra os favoritos
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: favorites.length,
+                  itemBuilder: (context, index) {
+                    final temple = favorites[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0), // Espaçamento entre os cards
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(8.0), // Espaçamento interno
+                        title: Row(
                           children: [
-                            FutureBuilder<List<TempleModel>>(
-                              future: FirebaseUtils().getAllFavorites(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  final favorites = snapshot.data!;
-                                  return Scaffold(
-                                    appBar: AppBar(
-                                      title: Text('Favorites'),
-                                    ),
-                                    body: ListView.builder(
-                                      itemCount: favorites.length,
-                                      itemBuilder: (context, index) {
-                                        final temple = favorites[index];
-
-                                        return ListTile(
-                                          title: Text(temple.name),
-                                          subtitle: Text(temple.address),
-                                        );
-                                      },
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return Center(
-                                      child: Text('Error: ${snapshot.error}'));
-                                }
-
-                                return Center(
-                                    child: CircularProgressIndicator());
-                              },
-                            )
+                            if (temple.imageUrl != null)
+                              Container(
+                                padding: const EdgeInsets.all(4.0),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey, width: 1),
+                                  borderRadius: BorderRadius.circular(20.0),
+                                ),
+                                child: ClipOval(
+                                  child: Image.network(
+                                    temple.imageUrl,
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(width: 8.0), // Espaçamento fixo
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    temple.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(temple.address),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
+                        onTap: () {
+                          moveToLocation(temple.latLng); // Move o mapa para o favorito
+                          Navigator.of(context).pop(); // Fecha o diálogo
+                        },
                       ),
                     );
                   },
                 );
               },
-              icon: Icon(Icons.favorite),
-              tooltip: 'Favoritos',
             ),
+          ),
+        );
+      },
+    );
+  },
+  icon: const Icon(Icons.favorite),
+  tooltip: 'Favoritos',
+),
             IconButton(
               onPressed: () {
                 showDialog(
