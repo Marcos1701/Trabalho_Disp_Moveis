@@ -2,20 +2,21 @@ import 'dart:convert';
 
 import 'package:logger/logger.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
-import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
+import 'package:trabalho_loc_ai/models/establishment_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 //usando dotenv
 import 'package:flutter_config/flutter_config.dart';
 
-Future<List<TempleModel>> getFavorites() async {
+Future<List<EstablishmentModel>> getFavorites() async {
   final FirebaseUtils firebaseUtils = FirebaseUtils();
-  List<TempleModel> templeList = await firebaseUtils.getAllFavorites();
+  List<EstablishmentModel> favoriteEstablishments =
+      await firebaseUtils.getAllFavorites();
 
-  return templeList;
+  return favoriteEstablishments;
 }
 
-Future<List<TempleModel>> getTempleList(LatLng latLng) async {
+Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
   var logger = Logger();
   List<String> types = [
     "bakery",
@@ -48,7 +49,7 @@ Future<List<TempleModel>> getTempleList(LatLng latLng) async {
     ));
   }
 
-  List<TempleModel> templeList = [];
+  List<EstablishmentModel> establishmentList = [];
 
   for (var response in await Future.wait(futures)) {
     Map<String, dynamic> json = jsonDecode(response.body);
@@ -63,8 +64,8 @@ Future<List<TempleModel>> getTempleList(LatLng latLng) async {
     for (var element in result) {
       element['types'] = element['types'].toString().toLowerCase().split(',');
 
-      templeList.add(
-        TempleModel(
+      establishmentList.add(
+        EstablishmentModel(
           name: element['name'],
           address: element['vicinity'], //endereço
           latLng: LatLng(
@@ -79,19 +80,19 @@ Future<List<TempleModel>> getTempleList(LatLng latLng) async {
     }
   }
 
-  List<TempleModel> favorites = await getFavorites();
+  List<EstablishmentModel> favorites = await getFavorites();
   print(favorites);
   for (var favorite in favorites) {
-    templeList.removeWhere((temple) => temple.placesId == favorite.placesId);
+    establishmentList.removeWhere(
+        (establishment) => establishment.placesId == favorite.placesId);
 
-    templeList.add(favorite);
+    establishmentList.add(favorite);
   }
 
-  return templeList;
+  return establishmentList;
 }
 
-
-Future<List<TempleModel>> getPlaces(LatLng latLng) async {
+Future<List<EstablishmentModel>> getPlaces(LatLng latLng) async {
   var logger = Logger();
   List<String> types = [
     "bakery",
@@ -124,7 +125,7 @@ Future<List<TempleModel>> getPlaces(LatLng latLng) async {
     ));
   }
 
-  List<TempleModel> templeList = [];
+  List<EstablishmentModel> establishmentList = [];
 
   for (var response in await Future.wait(futures)) {
     Map<String, dynamic> json = jsonDecode(response.body);
@@ -139,8 +140,8 @@ Future<List<TempleModel>> getPlaces(LatLng latLng) async {
     for (var element in result) {
       element['types'] = element['types'].toString().toLowerCase().split(',');
 
-      templeList.add(
-        TempleModel(
+      establishmentList.add(
+        EstablishmentModel(
           name: element['name'],
           address: element['vicinity'], //endereço
           latLng: LatLng(
@@ -155,5 +156,5 @@ Future<List<TempleModel>> getPlaces(LatLng latLng) async {
     }
   }
 
-  return templeList;
+  return establishmentList;
 }

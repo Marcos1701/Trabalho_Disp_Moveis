@@ -9,7 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:trabalho_loc_ai/view/auth/services/autenticacao_servico.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
-import 'package:trabalho_loc_ai/view/home/models/model_locations.dart';
+import 'package:trabalho_loc_ai/models/establishment_model.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
 import 'package:custom_info_window/custom_info_window.dart';
 
@@ -53,13 +53,13 @@ class LocationMapState extends State<LocationMap>
     _customInfoWindowController.googleMapController = controller;
   }
 
-    void moveToLocation(LatLng latLng) {
+  void moveToLocation(LatLng latLng) {
     _controller.future.then((controller) {
       controller.animateCamera(CameraUpdate.newLatLng(latLng));
     });
   }
 
-  Widget buildInfoWindow(TempleModel temple) {
+  Widget buildInfoWindow(EstablishmentModel establishment) {
     // Widget para mostrar o nome e o endereço do local
 
     return Column(
@@ -79,7 +79,7 @@ class LocationMapState extends State<LocationMap>
               ],
               border: Border.all(color: Colors.white, width: 2.0),
               image: DecorationImage(
-                image: Image.network(temple.imageUrl).image,
+                image: Image.network(establishment.imageUrl).image,
                 fit: BoxFit.cover,
               ),
             ),
@@ -94,7 +94,7 @@ class LocationMapState extends State<LocationMap>
                     width: 8.0,
                   ),
                   Text(
-                    temple.name,
+                    establishment.name,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12.0,
@@ -115,7 +115,7 @@ class LocationMapState extends State<LocationMap>
                     height: 8.0,
                   ),
                   Text(
-                    temple.address,
+                    establishment.address,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10.0,
@@ -148,7 +148,7 @@ class LocationMapState extends State<LocationMap>
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
                             width: 1.0,
-                            color: temple.isFavorite
+                            color: establishment.isFavorite
                                 ? Colors.yellow
                                 : Colors.white,
                           ),
@@ -161,7 +161,7 @@ class LocationMapState extends State<LocationMap>
                           ],
                         ),
                         child: IconButton(
-                          icon: temple.isFavorite
+                          icon: establishment.isFavorite
                               ? const Icon(Icons.star)
                               : const Icon(Icons.star_border_outlined),
                           color: Colors.white,
@@ -169,23 +169,24 @@ class LocationMapState extends State<LocationMap>
                           onPressed: () {
                             setState(
                               () {
-                                temple.isFavorite
+                                establishment.isFavorite
                                     ? _firebaseUtils
-                                        .removeFavorite(temple)
+                                        .removeFavorite(establishment)
                                         .then((_) {})
                                     : _firebaseUtils
-                                        .addFavorite(temple)
+                                        .addFavorite(establishment)
                                         .then((_) {});
-                                temple.toggleFavorite();
-                                Marker updatedMarker = temple.toMarker(
+                                establishment.toggleFavorite();
+                                Marker updatedMarker = establishment.toMarker(
                                   () => _customInfoWindowController
                                       .addInfoWindow!(
-                                    buildInfoWindow(temple),
-                                    temple.latLng,
+                                    buildInfoWindow(establishment),
+                                    establishment.latLng,
                                   ),
                                 );
                                 _markers.removeWhere((marker) =>
-                                    temple.placesId == marker.markerId.value);
+                                    establishment.placesId ==
+                                    marker.markerId.value);
                                 _markers.add(updatedMarker);
 
                                 _customInfoWindowController.hideInfoWindow!();
@@ -228,7 +229,7 @@ class LocationMapState extends State<LocationMap>
 
                             _getPolyline(
                               apiKey,
-                              temple.latLng,
+                              establishment.latLng,
                             );
 
                             _customInfoWindowController.hideInfoWindow!();
@@ -297,9 +298,9 @@ class LocationMapState extends State<LocationMap>
       ),
     );
     if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
+      for (var point in result.points) {
         polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
+      }
     }
 
     setState(() {
@@ -320,7 +321,8 @@ class LocationMapState extends State<LocationMap>
       setState(() {
         _isLoading = true;
       });
-      List<TempleModel> templeList = await getTempleList(_lastMapPosition!);
+      List<EstablishmentModel> templeList =
+          await getTempleList(_lastMapPosition!);
 
       for (int i = 0; i < templeList.length; i++) {
         //verifica se o local já existe no mapa
@@ -375,8 +377,6 @@ class LocationMapState extends State<LocationMap>
     }
     return;
   }
-
-  
 
   void carregarEstilo() {
     Future.delayed(Duration.zero, () {
@@ -463,207 +463,247 @@ class LocationMapState extends State<LocationMap>
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
-              //verifica se já está na home, se não estiver, navega para a home
-              onPressed: () => Navigator.pushNamed(context, '/home'),
+              onPressed: () => {},
               icon: const Icon(Icons.home),
               tooltip: 'Home',
             ),
             //aba para visualizar os estabelecimentos próximos, em forma de lista
             IconButton(
-  onPressed: () {
-    // Verifique se _lastMapPosition está definido
-    if (_lastMapPosition == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Localização não disponível.')),
-      );
-      return;
-    }
-
-    LatLng currentLocation = _lastMapPosition!; // Use o valor de _lastMapPosition
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Column(
-            children: [
-              Icon(Icons.list, size: 48),
-              SizedBox(height: 8),
-              Text('Lista de Estabelecimentos'),
-            ],
-          ),
-          contentPadding: const EdgeInsets.all(16),
-          content: SizedBox(
-            width: double.maxFinite, // Para ocupar a largura total
-            child: FutureBuilder<List<TempleModel>>(
-              future: getPlaces(currentLocation), // Chama a função da API
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Nenhum estabelecimento encontrado.'));
+              onPressed: () {
+                // Verifique se _lastMapPosition está definido
+                if (_lastMapPosition == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Localização não disponível.')),
+                  );
+                  return;
                 }
 
-                final establishments = snapshot.data!;
+                LatLng currentLocation =
+                    _lastMapPosition!; // Use o valor de _lastMapPosition
 
-                return ListView.builder(
-                  shrinkWrap: true, // Permite que a lista tenha uma altura mínima
-                  physics: const AlwaysScrollableScrollPhysics(), // Permite rolagem
-                  itemCount: establishments.length,
-                  itemBuilder: (context, index) {
-                    final temple = establishments[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0), // Espaçamento entre os cards
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(8.0),
-                        title: Row(
-                          children: [
-                            // Ícone do estabelecimento com borda arredondada
-                            if (temple.imageUrl != null) // Verifica se a URL da imagem existe
-                              Container(
-                                padding: const EdgeInsets.all(4.0), // Espaçamento interno
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey, width: 1), // Borda
-                                  borderRadius: BorderRadius.circular(20.0), // Bordas arredondadas
-                                ),
-                                child: ClipOval( // Faz o ícone ser circular
-                                  child: Image.network(
-                                    temple.imageUrl,
-                                    width: 40, // Largura do ícone
-                                    height: 40, // Altura do ícone
-                                    fit: BoxFit.cover,
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Column(
+                        children: [
+                          Icon(Icons.list, size: 48),
+                          SizedBox(height: 8),
+                          Text('Lista de Estabelecimentos'),
+                        ],
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                      content: SizedBox(
+                        width: double.maxFinite, // Para ocupar a largura total
+                        child: FutureBuilder<List<EstablishmentModel>>(
+                          future: getPlaces(
+                              currentLocation), // Chama a função da API
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return Center(
+                                  child: Text('Error: ${snapshot.error}'));
+                            } else if (!snapshot.hasData ||
+                                snapshot.data!.isEmpty) {
+                              return const Center(
+                                  child: Text(
+                                      'Nenhum estabelecimento encontrado.'));
+                            }
+
+                            final establishments = snapshot.data!;
+
+                            return ListView.builder(
+                              shrinkWrap:
+                                  true, // Permite que a lista tenha uma altura mínima
+                              physics:
+                                  const AlwaysScrollableScrollPhysics(), // Permite rolagem
+                              itemCount: establishments.length,
+                              itemBuilder: (context, index) {
+                                final temple = establishments[index];
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          8.0), // Espaçamento entre os cards
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(8.0),
+                                    title: Row(
+                                      children: [
+                                        // Ícone do estabelecimento com borda arredondada
+                                        // Verifica se a URL da imagem existe
+                                        Container(
+                                          padding: const EdgeInsets.all(
+                                              4.0), // Espaçamento interno
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.grey,
+                                                width: 1), // Borda
+                                            borderRadius: BorderRadius.circular(
+                                                20.0), // Bordas arredondadas
+                                          ),
+                                          child: ClipOval(
+                                            // Faz o ícone ser circular
+                                            child: Image.network(
+                                              temple.imageUrl,
+                                              width: 40, // Largura do ícone
+                                              height: 40, // Altura do ícone
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                        // Espaçamento entre o ícone e as informações
+                                        const SizedBox(
+                                            width: 8.0), // Espaçamento fixo
+                                        // Nome e endereço do estabelecimento
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                temple.name,
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              Text(temple.address),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    onTap: () {
+                                      moveToLocation(temple.latLng);
+
+                                      Navigator.of(context)
+                                          .pop(); // Fecha o diálogo
+                                    },
                                   ),
-                                ),
-                              ),
-                            // Espaçamento entre o ícone e as informações
-                            const SizedBox(width: 8.0), // Espaçamento fixo
-                            // Nome e endereço do estabelecimento
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    temple.name,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(temple.address),
-                                ],
-                              ),
-                            ),
-                          ],
+                                );
+                              },
+                            );
+                          },
                         ),
-                        onTap: () {
-                           moveToLocation(temple.latLng);
-
-                          Navigator.of(context).pop(); // Fecha o diálogo
-                        },
                       ),
                     );
                   },
                 );
               },
+              icon: const Icon(Icons.list),
+              tooltip: 'Lista de estabelecimentos',
             ),
-          ),
-        );
-      },
-    );
-  },
-  icon: const Icon(Icons.list),
-  tooltip: 'Lista de estabelecimentos',
-),
             IconButton(
-  onPressed: () {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Column(
-            children: [
-              Icon(Icons.favorite, size: 48),
-              SizedBox(height: 8),
-              Text('Favoritos'),
-            ],
-          ),
-          contentPadding: const EdgeInsets.all(16),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: FutureBuilder<List<TempleModel>>(
-              future: getTempleList(_lastMapPosition!), // Chama a função que busca estabelecimentos
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Nenhum favorito encontrado.'));
-                }
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Column(
+                        children: [
+                          Icon(Icons.favorite, size: 48),
+                          SizedBox(height: 8),
+                          Text('Favoritos'),
+                        ],
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                      content: SizedBox(
+                        width: double.maxFinite,
+                        child: FutureBuilder<List<EstablishmentModel>>(
+                          future: getTempleList(
+                              _lastMapPosition!), // Chama a função que busca estabelecimentos
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return Center(
+                                  child: Text('Error: ${snapshot.error}'));
+                            } else if (!snapshot.hasData ||
+                                snapshot.data!.isEmpty) {
+                              return const Center(
+                                  child: Text('Nenhum favorito encontrado.'));
+                            }
 
-                final establishments = snapshot.data!;
-                final favorites = establishments.where((temple) => temple.isFavorite).toList(); // Filtra os favoritos
+                            final establishments = snapshot.data!;
+                            final favorites = establishments
+                                .where((temple) => temple.isFavorite)
+                                .toList(); // Filtra os favoritos
 
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: favorites.length,
-                  itemBuilder: (context, index) {
-                    final temple = favorites[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0), // Espaçamento entre os cards
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(8.0), // Espaçamento interno
-                        title: Row(
-                          children: [
-                            if (temple.imageUrl != null)
-                              Container(
-                                padding: const EdgeInsets.all(4.0),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey, width: 1),
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: ClipOval(
-                                  child: Image.network(
-                                    temple.imageUrl,
-                                    width: 40,
-                                    height: 40,
-                                    fit: BoxFit.cover,
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: favorites.length,
+                              itemBuilder: (context, index) {
+                                final temple = favorites[index];
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical:
+                                          8.0), // Espaçamento entre os cards
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(
+                                        8.0), // Espaçamento interno
+                                    title: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(4.0),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: Colors.grey, width: 1),
+                                            borderRadius:
+                                                BorderRadius.circular(20.0),
+                                          ),
+                                          child: ClipOval(
+                                            child: Image.network(
+                                              temple.imageUrl,
+                                              width: 40,
+                                              height: 40,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                            width: 8.0), // Espaçamento fixo
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                temple.name,
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              Text(temple.address),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    onTap: () {
+                                      moveToLocation(temple
+                                          .latLng); // Move o mapa para o favorito
+                                      Navigator.of(context)
+                                          .pop(); // Fecha o diálogo
+                                    },
                                   ),
-                                ),
-                              ),
-                            const SizedBox(width: 8.0), // Espaçamento fixo
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    temple.name,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(temple.address),
-                                ],
-                              ),
-                            ),
-                          ],
+                                );
+                              },
+                            );
+                          },
                         ),
-                        onTap: () {
-                          moveToLocation(temple.latLng); // Move o mapa para o favorito
-                          Navigator.of(context).pop(); // Fecha o diálogo
-                        },
                       ),
                     );
                   },
                 );
               },
+              icon: const Icon(Icons.favorite),
+              tooltip: 'Favoritos',
             ),
-          ),
-        );
-      },
-    );
-  },
-  icon: const Icon(Icons.favorite),
-  tooltip: 'Favoritos',
-),
             IconButton(
               onPressed: () {
                 showDialog(

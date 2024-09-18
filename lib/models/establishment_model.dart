@@ -1,6 +1,6 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class TempleModel {
+class EstablishmentModel {
   final String name;
   final String address;
   final LatLng latLng;
@@ -15,7 +15,7 @@ class TempleModel {
 
   get isFavorite => _isFavorite;
 
-  TempleModel({
+  EstablishmentModel({
     required this.name,
     required this.address,
     required this.latLng,
@@ -36,8 +36,9 @@ class TempleModel {
     };
   }
 
-  factory TempleModel.fromMap(Map<String, dynamic> map, {bool? isFavorite}) {
-    TempleModel temple = TempleModel(
+  factory EstablishmentModel.fromMap(Map<String, dynamic> map,
+      {bool? isFavorite}) {
+    EstablishmentModel temple = EstablishmentModel(
       name: map['name'],
       address: map['address'],
       types: List<String>.from(map['types']),
