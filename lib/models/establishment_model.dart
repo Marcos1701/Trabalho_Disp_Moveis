@@ -1,13 +1,17 @@
+import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
 
 class EstablishmentModel {
   final String name;
   final String address;
   final LatLng latLng;
-  final String imageUrl;
+  final String icon;
   final String placesId;
   final List<String> types;
   late bool _isFavorite = false;
+  final List<String> photosReference;
+  final List<String> photosUrl = [];
 
   void toggleFavorite() {
     _isFavorite = !_isFavorite;
@@ -19,9 +23,10 @@ class EstablishmentModel {
     required this.name,
     required this.address,
     required this.latLng,
-    required this.imageUrl,
+    required this.icon,
     required this.placesId,
     required this.types,
+    required this.photosReference,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,10 +34,11 @@ class EstablishmentModel {
       'name': name,
       'address': address,
       'types': types,
-      'imageUrl': imageUrl,
+      'icon': icon,
       'placesId': placesId,
       'lat': latLng.latitude,
       'lng': latLng.longitude,
+      'isFavorite': _isFavorite
     };
   }
 
@@ -42,9 +48,10 @@ class EstablishmentModel {
       name: map['name'],
       address: map['address'],
       types: List<String>.from(map['types']),
-      imageUrl: map['imageUrl'],
+      icon: map['icon'],
       placesId: map['placesId'],
       latLng: LatLng(map['lat'], map['lng']),
+      photosReference: List<String>.from(map['photos']),
     );
 
     if (isFavorite != null && isFavorite) {
@@ -65,5 +72,21 @@ class EstablishmentModel {
       ),
       onTap: onTap,
     );
+  }
+
+  InfoWindow buildInfoWindow(EstablishmentModel establishment) {
+    return InfoWindow(
+      title: establishment.name,
+      snippet: establishment.address,
+    );
+  }
+
+  Future<void> loadPhotos() async {
+    if (photosUrl.isNotEmpty) {
+      return;
+    }
+    List<String> photosLoaded = [];
+    photosLoaded = await getUrlPhotos(placesId);
+    photosUrl.addAll(photosLoaded);
   }
 }

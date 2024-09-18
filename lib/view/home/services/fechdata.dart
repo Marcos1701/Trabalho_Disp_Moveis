@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+// import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/models/establishment_model.dart';
@@ -14,6 +15,39 @@ Future<List<EstablishmentModel>> getFavorites() async {
       await firebaseUtils.getAllFavorites();
 
   return favoriteEstablishments;
+}
+
+Future<List<String>> getUrlPhotos(String placeId) async {
+  String apiKey = await FlutterConfig.get('ApiKey');
+
+  if (apiKey.isEmpty) {
+    throw Exception('API KEY não encontrada');
+  }
+  var response = await http.get(
+    Uri.parse(
+      'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&fields=photos&key=$apiKey',
+    ),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to load photos');
+  }
+
+  var jsonResponse = jsonDecode(response.body);
+  List<String> photosReference = List.from(
+    jsonResponse['result']['photos'].map((x) => x['photo_reference']),
+  );
+
+  List<String> imagesUrl = [];
+
+  for (int i = 0; i < photosReference.length; i++) {
+    if (i > 4) break;
+    imagesUrl.add(
+      'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&maxheight=400&photo_reference=${photosReference[i]}&key=$apiKey',
+    );
+  }
+
+  return imagesUrl;
 }
 
 Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
@@ -62,7 +96,17 @@ Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
     var result = json['results'] as List;
 
     for (var element in result) {
-      element['types'] = element['types'].toString().toLowerCase().split(',');
+      List<String> types = List<String>.from(element['types']);
+      print(types[0]);
+
+      List<String> photosReferences = [];
+
+      if (element['photos'] != null) {
+        photosReferences = List<String>.from(
+            element['photos'].map((x) => x['photo_reference']));
+      }
+
+      // print(element['types'][0]);
 
       establishmentList.add(
         EstablishmentModel(
@@ -72,16 +116,17 @@ Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
             element['geometry']['location']['lat'], //latitude e longitude
             element['geometry']['location']['lng'],
           ),
-          imageUrl: element['icon'],
+          icon: element['icon'],
           placesId: element['place_id'],
-          types: element['types'],
+          types: types,
+          photosReference: photosReferences,
         ),
       );
     }
   }
 
   List<EstablishmentModel> favorites = await getFavorites();
-  print(favorites);
+  // print(favorites);
   for (var favorite in favorites) {
     establishmentList.removeWhere(
         (establishment) => establishment.placesId == favorite.placesId);
@@ -140,6 +185,13 @@ Future<List<EstablishmentModel>> getPlaces(LatLng latLng) async {
     for (var element in result) {
       element['types'] = element['types'].toString().toLowerCase().split(',');
 
+      List<String> photosReference = [];
+
+      if (element['photos'] != null) {
+        photosReference = List<String>.from(
+            element['photos'].map((x) => x['photo_reference']));
+      }
+
       establishmentList.add(
         EstablishmentModel(
           name: element['name'],
@@ -148,9 +200,10 @@ Future<List<EstablishmentModel>> getPlaces(LatLng latLng) async {
             element['geometry']['location']['lat'], //latitude e longitude
             element['geometry']['location']['lng'],
           ),
-          imageUrl: element['icon'],
+          icon: element['icon'],
           placesId: element['place_id'],
           types: element['types'],
+          photosReference: photosReference,
         ),
       );
     }

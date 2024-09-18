@@ -8,13 +8,16 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:trabalho_loc_ai/view/auth/services/autenticacao_servico.dart';
+import 'package:trabalho_loc_ai/view/details/establishment_details.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/models/establishment_model.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
 import 'package:custom_info_window/custom_info_window.dart';
 
 class LocationMap extends StatefulWidget {
-  const LocationMap({super.key});
+  // adicionando variável para caso deseje iniciar de uma localização
+  final LatLng? initialLocation;
+  const LocationMap({super.key, this.initialLocation});
 
   @override
   State<LocationMap> createState() => LocationMapState();
@@ -79,7 +82,7 @@ class LocationMapState extends State<LocationMap>
               ],
               border: Border.all(color: Colors.white, width: 2.0),
               image: DecorationImage(
-                image: Image.network(establishment.imageUrl).image,
+                image: Image.network(establishment.icon).image,
                 fit: BoxFit.cover,
               ),
             ),
@@ -93,46 +96,87 @@ class LocationMapState extends State<LocationMap>
                   const SizedBox(
                     width: 8.0,
                   ),
-                  Text(
-                    establishment.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.0,
-                      fontWeight: FontWeight.bold,
-                      shadows: <Shadow>[
-                        Shadow(
-                          offset: Offset(1.0, 1.0),
-                          blurRadius: 2.0,
-                          color: Color.fromARGB(255, 0, 0, 0),
-                        ),
-                      ],
-                      overflow: TextOverflow.ellipsis,
+                  TextButton(
+                    onPressed: () {
+                      final BuildContext buildContext = context;
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      establishment.loadPhotos().then((_) {
+                        setState(() {
+                          _isLoading = false;
+                        });
+                        if (!buildContext.mounted) return;
+                        Navigator.of(buildContext).push(
+                          MaterialPageRoute(
+                            builder: (context) => EstablishmentDetails(
+                              establishment: establishment,
+                            ),
+                          ),
+                        );
+                      });
+                    },
+                    child: Text(
+                      establishment.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.bold,
+                        shadows: <Shadow>[
+                          Shadow(
+                            offset: Offset(1.0, 1.0),
+                            blurRadius: 2.0,
+                            color: Color.fromARGB(255, 0, 0, 0),
+                          ),
+                        ],
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(
                     width: 10.0,
                     height: 8.0,
                   ),
-                  Text(
-                    establishment.address,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10.0,
-                      shadows: <Shadow>[
-                        Shadow(
-                          offset: Offset(1.0, 1.0),
-                          blurRadius: 2.0,
-                          color: Color.fromARGB(255, 0, 0, 0),
-                        ),
-                      ],
+                  TextButton(
+                    onPressed: () {
+                      final BuildContext buildContext = context;
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      establishment.loadPhotos().then((_) {
+                        setState(() {
+                          _isLoading = false;
+                        });
+                        if (!buildContext.mounted) return;
+                        Navigator.of(buildContext).push(
+                          MaterialPageRoute(
+                              builder: (context) => EstablishmentDetails(
+                                    establishment: establishment,
+                                  )),
+                        );
+                      });
+                    },
+                    child: Text(
+                      establishment.address,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.0,
+                        shadows: <Shadow>[
+                          Shadow(
+                            offset: Offset(1.0, 1.0),
+                            blurRadius: 2.0,
+                            color: Color.fromARGB(255, 0, 0, 0),
+                          ),
+                        ],
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                      textDirection: TextDirection.ltr,
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: true,
-                    textDirection: TextDirection.ltr,
                   ),
                   const SizedBox(height: 16.0),
                   //botão para favoritar o local, com icone de estrela e fundo amarelo
@@ -274,46 +318,41 @@ class LocationMapState extends State<LocationMap>
       (GoogleMapController controler) {
         controler.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
           target: destination,
-          zoom: 14.0,
+          zoom: 18.0,
         )));
       },
     );
 
-    // Adiciona um marcador na
+    List<LatLng> polylineCoordinates = [];
+    PolylinePoints polylinePoints = PolylinePoints();
 
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
       googleApiKey: apikey,
       request: PolylineRequest(
         origin: PointLatLng(
-          _lastMapPosition!.latitude,
-          _lastMapPosition!.longitude,
-        ),
+            _lastMapPosition!.latitude, _lastMapPosition!.longitude),
         destination: PointLatLng(destination.latitude, destination.longitude),
         mode: TravelMode.driving,
-        // wayPoints: [
-        //   PolylineWayPoint(
-        //       location:
-        //           '${_lastMapPosition!.latitude},${_lastMapPosition!.longitude}')
-        // ],
       ),
     );
-    if (result.points.isNotEmpty) {
-      for (var point in result.points) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      }
-    }
 
-    setState(() {
-      _polylines.clear();
-      _polylines.add(
-        Polyline(
-          polylineId: const PolylineId('polyline'),
-          color: Colors.blue,
-          width: 5,
-          points: polylineCoordinates,
-        ),
-      );
-    });
+    if (result.points.isNotEmpty) {
+      result.points.forEach((PointLatLng point) {
+        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+      });
+
+      setState(() {
+        _polylines.clear();
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('polyline'),
+            color: Colors.blue,
+            points: polylineCoordinates,
+            visible: true,
+          ),
+        );
+      });
+    }
   }
 
   Future<void> _getData() async {
@@ -392,6 +431,10 @@ class LocationMapState extends State<LocationMap>
   void initState() {
     carregarEstilo();
     requestPermission();
+    if (widget.initialLocation != null) {
+      _lastMapPosition = widget.initialLocation;
+      moveToLocation(_lastMapPosition!);
+    }
     super.initState();
   }
 
@@ -510,8 +553,9 @@ class LocationMapState extends State<LocationMap>
                             } else if (!snapshot.hasData ||
                                 snapshot.data!.isEmpty) {
                               return const Center(
-                                  child: Text(
-                                      'Nenhum estabelecimento encontrado.'));
+                                child:
+                                    Text('Nenhum estabelecimento encontrado.'),
+                              );
                             }
 
                             final establishments = snapshot.data!;
@@ -523,11 +567,11 @@ class LocationMapState extends State<LocationMap>
                                   const AlwaysScrollableScrollPhysics(), // Permite rolagem
                               itemCount: establishments.length,
                               itemBuilder: (context, index) {
-                                final temple = establishments[index];
+                                final establishment = establishments[index];
                                 return Card(
                                   margin: const EdgeInsets.symmetric(
-                                      vertical:
-                                          8.0), // Espaçamento entre os cards
+                                    vertical: 8.0,
+                                  ), // Espaçamento entre os cards
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.all(8.0),
                                     title: Row(
@@ -536,18 +580,20 @@ class LocationMapState extends State<LocationMap>
                                         // Verifica se a URL da imagem existe
                                         Container(
                                           padding: const EdgeInsets.all(
-                                              4.0), // Espaçamento interno
+                                            4.0,
+                                          ), // Espaçamento interno
                                           decoration: BoxDecoration(
                                             border: Border.all(
-                                                color: Colors.grey,
-                                                width: 1), // Borda
+                                              color: Colors.grey,
+                                              width: 1,
+                                            ), // Borda
                                             borderRadius: BorderRadius.circular(
                                                 20.0), // Bordas arredondadas
                                           ),
                                           child: ClipOval(
                                             // Faz o ícone ser circular
                                             child: Image.network(
-                                              temple.imageUrl,
+                                              establishment.icon,
                                               width: 40, // Largura do ícone
                                               height: 40, // Altura do ícone
                                               fit: BoxFit.cover,
@@ -564,22 +610,40 @@ class LocationMapState extends State<LocationMap>
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                temple.name,
+                                                establishment.name,
                                                 style: const TextStyle(
                                                     fontWeight:
                                                         FontWeight.bold),
                                               ),
-                                              Text(temple.address),
+                                              Text(establishment.address),
                                             ],
                                           ),
                                         ),
                                       ],
                                     ),
-                                    onTap: () {
-                                      moveToLocation(temple.latLng);
-
+                                    onLongPress: () {
+                                      moveToLocation(establishment.latLng);
                                       Navigator.of(context)
                                           .pop(); // Fecha o diálogo
+                                    },
+                                    onTap: () {
+                                      setState(() {
+                                        _isLoading = true;
+                                      });
+                                      establishment.loadPhotos().then((_) {
+                                        setState(() {
+                                          _isLoading = false;
+                                        });
+                                        if (!context.mounted) return;
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  EstablishmentDetails(
+                                                    establishment:
+                                                        establishment,
+                                                  )),
+                                        );
+                                      });
                                     },
                                   ),
                                 );
@@ -658,7 +722,7 @@ class LocationMapState extends State<LocationMap>
                                           ),
                                           child: ClipOval(
                                             child: Image.network(
-                                              temple.imageUrl,
+                                              temple.icon,
                                               width: 40,
                                               height: 40,
                                               fit: BoxFit.cover,
