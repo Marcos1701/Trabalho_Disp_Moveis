@@ -53,15 +53,9 @@ Future<List<String>> getUrlPhotos(String placeId) async {
 Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
   var logger = Logger();
   List<String> types = [
-    "bakery",
     "bar",
     "cafe",
-    "convenience_store",
-    "meal_delivery",
-    "meal_takeaway",
     "restaurant",
-    "shopping_mall",
-    "supermarket",
   ];
   String apiKey = await FlutterConfig.get('ApiKey');
 
@@ -97,9 +91,15 @@ Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
 
     for (var element in result) {
       List<String> types = List<String>.from(element['types']);
-      // print(types[0]);
 
-      // print(element['types'][0]);
+      List<String> filteredTypes = types
+          .where(
+              (item) => item == 'bar' || item == 'cafe' || item == 'restaurant')
+          .toList();
+
+      if (filteredTypes.isEmpty) {
+        continue;
+      }
 
       establishmentList.add(
         EstablishmentModel(
@@ -111,7 +111,7 @@ Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
           ),
           icon: element['icon'],
           placesId: element['place_id'],
-          types: types,
+          type: filteredTypes[0],
         ),
       );
     }
@@ -132,15 +132,9 @@ Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
 Future<List<EstablishmentModel>> getPlaces(LatLng latLng) async {
   var logger = Logger();
   List<String> types = [
-    "bakery",
     "bar",
     "cafe",
-    "convenience_store",
-    "meal_delivery",
-    "meal_takeaway",
     "restaurant",
-    "shopping_mall",
-    "supermarket",
   ];
   String apiKey = await FlutterConfig.get('ApiKey');
 
@@ -175,7 +169,16 @@ Future<List<EstablishmentModel>> getPlaces(LatLng latLng) async {
     var result = json['results'] as List;
 
     for (var element in result) {
-      element['types'] = element['types'].toString().toLowerCase().split(',');
+      List<String> types = List<String>.from(element['types']);
+
+      List<String> filteredTypes = types
+          .where(
+              (item) => item == 'bar' || item == 'cafe' || item == 'restaurant')
+          .toList();
+
+      if (filteredTypes.isEmpty) {
+        continue;
+      }
 
       establishmentList.add(
         EstablishmentModel(
@@ -187,7 +190,7 @@ Future<List<EstablishmentModel>> getPlaces(LatLng latLng) async {
           ),
           icon: element['icon'],
           placesId: element['place_id'],
-          types: element['types'],
+          type: filteredTypes[0],
         ),
       );
     }

@@ -75,6 +75,7 @@ class _EstablishmentDetailsState extends State<EstablishmentDetails> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         extendBody: true,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
@@ -89,7 +90,7 @@ class _EstablishmentDetailsState extends State<EstablishmentDetails> {
         body: GestureDetector(
           onTap: () {
             FocusScope.of(context).unfocus(
-              disposition: UnfocusDisposition.scope,
+              disposition: UnfocusDisposition.previouslyFocusedChild,
             );
           },
           child: Padding(
@@ -316,53 +317,58 @@ class _EstablishmentDetailsState extends State<EstablishmentDetails> {
             ),
           ),
         ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           mainAxisSize: MainAxisSize.max,
           children: [
-            FloatingActionButton(
-              heroTag: 'Back to home - ${widget.establishment.name}',
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: const BorderSide(color: Colors.black),
+            Visibility(
+              visible: !(_commentController.text.isNotEmpty),
+              child: FloatingActionButton(
+                heroTag: 'Back to home - ${widget.establishment.name}',
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: Colors.black),
+                ),
+                child: const Icon(Icons.arrow_back),
               ),
-              child: const Icon(Icons.arrow_back),
             ),
-            FloatingActionButton(
-              heroTag: 'Favorite - ${widget.establishment.name}',
-              onPressed: () {
-                widget.establishment.isFavorite
-                    ? _firebaseUtils
-                        .removeFavorite(widget.establishment)
-                        .then((_) {})
-                    : _firebaseUtils
-                        .addFavorite(widget.establishment)
-                        .then((_) {});
-                widget.establishment.toggleFavorite();
-              },
-              backgroundColor: widget.establishment.isFavorite
-                  ? Colors.white
-                  : Colors.yellow.shade900,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: widget.establishment.isFavorite
-                    ? const BorderSide(color: Colors.black)
-                    : const BorderSide(color: Colors.white),
-              ),
-              child: Icon(
-                widget.establishment.isFavorite
-                    ? Icons.favorite
-                    : Icons.favorite_border,
+            Visibility(
+              visible: !(_commentController.text.isNotEmpty),
+              child: FloatingActionButton(
+                heroTag: 'Favorite - ${widget.establishment.name}',
+                onPressed: () {
+                  widget.establishment.isFavorite
+                      ? _firebaseUtils
+                          .removeFavorite(widget.establishment)
+                          .then((_) {})
+                      : _firebaseUtils
+                          .addFavorite(widget.establishment)
+                          .then((_) {});
+                  widget.establishment.toggleFavorite();
+                },
+                backgroundColor: widget.establishment.isFavorite
+                    ? Colors.white
+                    : Colors.yellow.shade900,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: widget.establishment.isFavorite
+                      ? const BorderSide(color: Colors.black)
+                      : const BorderSide(color: Colors.white),
+                ),
+                child: Icon(
+                  widget.establishment.isFavorite
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                ),
               ),
             ),
           ],
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        resizeToAvoidBottomInset: true, // para ultrapassar o teclado
       ),
     );
   }

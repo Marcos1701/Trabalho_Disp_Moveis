@@ -8,7 +8,7 @@ class EstablishmentModel {
   final LatLng latLng;
   final String icon;
   final String placesId;
-  final List<String> types;
+  final String type;
   late bool _isFavorite = false;
   final List<String> photosUrl = [];
 
@@ -24,14 +24,14 @@ class EstablishmentModel {
     required this.latLng,
     required this.icon,
     required this.placesId,
-    required this.types,
+    required this.type,
   });
 
   Map<String, dynamic> toMap() {
     return {
       'name': name,
       'address': address,
-      'types': types,
+      'types': type,
       'icon': icon,
       'placesId': placesId,
       'lat': latLng.latitude,
@@ -45,7 +45,7 @@ class EstablishmentModel {
     EstablishmentModel temple = EstablishmentModel(
       name: map['name'],
       address: map['address'],
-      types: List<String>.from(map['types']),
+      type: map['type'],
       icon: map['icon'],
       placesId: map['placesId'],
       latLng: LatLng(map['lat'], map['lng']),
