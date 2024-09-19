@@ -137,6 +137,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  dio:
+    dependency: "direct main"
+    description:
+      name: dio
+      sha256: "5598aa796bbf4699afd5c67c0f5f6e2ed542afc956884b9cd58c306966efc260"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.7.0"
+  dio_web_adapter:
+    dependency: transitive
+    description:
+      name: dio_web_adapter
+      sha256: "33259a9276d6cea88774a0000cfae0d861003497755969c92faa223108620dc8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   fake_async:
     dependency: transitive
     description:
@@ -401,7 +417,7 @@ packages:
     source: hosted
     version: "2.9.0"
   google_maps_flutter_web:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: google_maps_flutter_web
       sha256: ff39211bd25d7fad125d19f757eba85bd154460907cd4d135e07e3d0f98a4130

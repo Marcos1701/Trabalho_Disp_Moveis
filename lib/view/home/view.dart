@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_config/flutter_config.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -11,6 +11,7 @@ import 'package:trabalho_loc_ai/view/auth/services/autenticacao_servico.dart';
 import 'package:trabalho_loc_ai/view/details/establishment_details.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/models/establishment_model.dart';
+import 'package:trabalho_loc_ai/view/home/services/directions_service.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
 import 'package:custom_info_window/custom_info_window.dart';
 
@@ -31,18 +32,17 @@ class LocationMapState extends State<LocationMap>
   final CustomInfoWindowController _customInfoWindowController =
       CustomInfoWindowController();
 
-  final Set<Polyline> _polylines = {};
-  List<LatLng> polylineCoordinates = [];
-  PolylinePoints polylinePoints = PolylinePoints();
-  List<LatLng> routeCoords = [];
-
   final FirebaseUtils _firebaseUtils = FirebaseUtils();
 
   late bool _isLoading = true;
 
   String _mapStyle = '';
+  Directions? _info;
 
   LatLng? _lastMapPosition;
+
+  //polylines
+  final Set<Polyline> _polylines = {};
 
   @override
   void dispose() {
@@ -272,7 +272,6 @@ class LocationMapState extends State<LocationMap>
                             }
 
                             _getPolyline(
-                              apiKey,
                               establishment.latLng,
                             );
 
@@ -311,9 +310,12 @@ class LocationMapState extends State<LocationMap>
   }
 
   _getPolyline(
-    String apikey,
     LatLng destination,
   ) async {
+    if (_lastMapPosition == null) {
+      return;
+    }
+
     _controller.future.then(
       (GoogleMapController controler) {
         controler.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
@@ -323,36 +325,34 @@ class LocationMapState extends State<LocationMap>
       },
     );
 
-    List<LatLng> polylineCoordinates = [];
-    PolylinePoints polylinePoints = PolylinePoints();
+    final Directions? directions = await DirectionsRepository(dio: Dio())
+        .getRouteBetweenCoordinates(
+            origin: _lastMapPosition!, destination: destination);
+    debugPrint('directions => $directions');
+    if (directions == null) return;
 
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      googleApiKey: apikey,
-      request: PolylineRequest(
-        origin: PointLatLng(
-            _lastMapPosition!.latitude, _lastMapPosition!.longitude),
-        destination: PointLatLng(destination.latitude, destination.longitude),
-        mode: TravelMode.driving,
-      ),
-    );
+    setState(() {
+      _info = directions;
+      debugPrint('directions => ${_info!.polylinePoints}');
+      // _polylines.clear();
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId('direction_polyline'),
+          color: Colors.indigoAccent,
+          width: 5,
+          points: _info!.polylinePoints
+              .map((e) => LatLng(e.latitude, e.longitude))
+              .toList(),
+        ),
+      );
 
-    if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+      _controller.future.then((GoogleMapController controler) {
+        controler.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+          target: _lastMapPosition!,
+          zoom: 18.0,
+        )));
       });
-
-      setState(() {
-        _polylines.clear();
-        _polylines.add(
-          Polyline(
-            polylineId: const PolylineId('polyline'),
-            color: Colors.blue,
-            points: polylineCoordinates,
-            visible: true,
-          ),
-        );
-      });
-    }
+    });
   }
 
   Future<void> _getData() async {
@@ -435,6 +435,10 @@ class LocationMapState extends State<LocationMap>
       _lastMapPosition = widget.initialLocation;
       moveToLocation(_lastMapPosition!);
     }
+    //teste
+    _getPolyline(
+      const LatLng(-5.088753152055176, -42.81098924326597),
+    );
     super.initState();
   }
 
