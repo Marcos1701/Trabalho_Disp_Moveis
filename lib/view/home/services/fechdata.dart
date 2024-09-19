@@ -43,7 +43,7 @@ Future<List<String>> getUrlPhotos(String placeId) async {
   for (int i = 0; i < photosReference.length; i++) {
     if (i > 4) break;
     imagesUrl.add(
-      'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&maxheight=400&photo_reference=${photosReference[i]}&key=$apiKey',
+      'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&maxheight=300&photo_reference=${photosReference[i]}&key=$apiKey',
     );
   }
 
@@ -97,14 +97,7 @@ Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
 
     for (var element in result) {
       List<String> types = List<String>.from(element['types']);
-      print(types[0]);
-
-      List<String> photosReferences = [];
-
-      if (element['photos'] != null) {
-        photosReferences = List<String>.from(
-            element['photos'].map((x) => x['photo_reference']));
-      }
+      // print(types[0]);
 
       // print(element['types'][0]);
 
@@ -119,7 +112,6 @@ Future<List<EstablishmentModel>> getTempleList(LatLng latLng) async {
           icon: element['icon'],
           placesId: element['place_id'],
           types: types,
-          photosReference: photosReferences,
         ),
       );
     }
@@ -185,13 +177,6 @@ Future<List<EstablishmentModel>> getPlaces(LatLng latLng) async {
     for (var element in result) {
       element['types'] = element['types'].toString().toLowerCase().split(',');
 
-      List<String> photosReference = [];
-
-      if (element['photos'] != null) {
-        photosReference = List<String>.from(
-            element['photos'].map((x) => x['photo_reference']));
-      }
-
       establishmentList.add(
         EstablishmentModel(
           name: element['name'],
@@ -203,7 +188,6 @@ Future<List<EstablishmentModel>> getPlaces(LatLng latLng) async {
           icon: element['icon'],
           placesId: element['place_id'],
           types: element['types'],
-          photosReference: photosReference,
         ),
       );
     }

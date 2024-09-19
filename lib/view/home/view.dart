@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_config/flutter_config.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -11,7 +9,6 @@ import 'package:trabalho_loc_ai/view/auth/services/autenticacao_servico.dart';
 import 'package:trabalho_loc_ai/view/details/establishment_details.dart';
 import 'package:trabalho_loc_ai/view/home/database/firebaseutils.dart';
 import 'package:trabalho_loc_ai/models/establishment_model.dart';
-import 'package:trabalho_loc_ai/view/home/services/directions_service.dart';
 import 'package:trabalho_loc_ai/view/home/services/fechdata.dart';
 import 'package:custom_info_window/custom_info_window.dart';
 
@@ -37,12 +34,8 @@ class LocationMapState extends State<LocationMap>
   late bool _isLoading = true;
 
   String _mapStyle = '';
-  Directions? _info;
 
   LatLng? _lastMapPosition;
-
-  //polylines
-  final Set<Polyline> _polylines = {};
 
   @override
   void dispose() {
@@ -64,7 +57,6 @@ class LocationMapState extends State<LocationMap>
 
   Widget buildInfoWindow(EstablishmentModel establishment) {
     // Widget para mostrar o nome e o endereço do local
-
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -116,170 +108,104 @@ class LocationMapState extends State<LocationMap>
                         );
                       });
                     },
-                    child: Text(
-                      establishment.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12.0,
-                        fontWeight: FontWeight.bold,
-                        shadows: <Shadow>[
-                          Shadow(
-                            offset: Offset(1.0, 1.0),
-                            blurRadius: 2.0,
-                            color: Color.fromARGB(255, 0, 0, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          establishment.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.0,
+                            fontWeight: FontWeight.bold,
+                            shadows: <Shadow>[
+                              Shadow(
+                                offset: Offset(1.0, 1.0),
+                                blurRadius: 2.0,
+                                color: Color.fromARGB(255, 0, 0, 0),
+                              ),
+                            ],
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 10.0,
-                    height: 8.0,
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      final BuildContext buildContext = context;
-                      setState(() {
-                        _isLoading = true;
-                      });
-                      establishment.loadPhotos().then((_) {
-                        setState(() {
-                          _isLoading = false;
-                        });
-                        if (!buildContext.mounted) return;
-                        Navigator.of(buildContext).push(
-                          MaterialPageRoute(
-                              builder: (context) => EstablishmentDetails(
-                                    establishment: establishment,
-                                  )),
-                        );
-                      });
-                    },
-                    child: Text(
-                      establishment.address,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10.0,
-                        shadows: <Shadow>[
-                          Shadow(
-                            offset: Offset(1.0, 1.0),
-                            blurRadius: 2.0,
-                            color: Color.fromARGB(255, 0, 0, 0),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4.0),
+                        Text(
+                          establishment.address,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.0,
+                            shadows: <Shadow>[
+                              Shadow(
+                                offset: Offset(1.0, 1.0),
+                                blurRadius: 2.0,
+                                color: Color.fromARGB(255, 0, 0, 0),
+                              ),
+                            ],
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                      textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                          textDirection: TextDirection.ltr,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16.0),
                   //botão para favoritar o local, com icone de estrela e fundo amarelo
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 70.0,
-                        decoration: BoxDecoration(
-                          color: Colors.yellow,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            width: 1.0,
-                            color: establishment.isFavorite
-                                ? Colors.yellow
-                                : Colors.white,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black,
-                              blurRadius: 5.0,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: IconButton(
-                          icon: establishment.isFavorite
-                              ? const Icon(Icons.star)
-                              : const Icon(Icons.star_border_outlined),
-                          color: Colors.white,
-                          iconSize: 24.0,
-                          onPressed: () {
-                            setState(
-                              () {
-                                establishment.isFavorite
-                                    ? _firebaseUtils
-                                        .removeFavorite(establishment)
-                                        .then((_) {})
-                                    : _firebaseUtils
-                                        .addFavorite(establishment)
-                                        .then((_) {});
-                                establishment.toggleFavorite();
-                                Marker updatedMarker = establishment.toMarker(
-                                  () => _customInfoWindowController
-                                      .addInfoWindow!(
-                                    buildInfoWindow(establishment),
-                                    establishment.latLng,
-                                  ),
-                                );
-                                _markers.removeWhere((marker) =>
-                                    establishment.placesId ==
-                                    marker.markerId.value);
-                                _markers.add(updatedMarker);
-
-                                _customInfoWindowController.hideInfoWindow!();
-                              },
-                            );
-                          },
-                        ),
+                  Container(
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.yellow,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        width: 1.0,
+                        color: establishment.isFavorite
+                            ? Colors.yellow
+                            : Colors.white,
                       ),
-                      const SizedBox(
-                        width: 10.0,
-                      ),
-                      //botão para calcular a rota
-                      Container(
-                        width: 70.0,
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(width: 1.0, color: Colors.white),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black,
-                              blurRadius: 5.0,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black,
+                          blurRadius: 5.0,
+                          offset: Offset(0, 2),
                         ),
-                        child: IconButton(
-                          icon: const Icon(Icons.directions),
-                          color: Colors.white,
-                          iconSize: 24.0,
-                          onPressed: () async {
-                            // print('clicked');
-                            String apiKey = await FlutterConfig.get('ApiKey');
-
-                            if (apiKey.isEmpty) {
-                              print(
-                                  'API KEY não encontrada, resumindo a situação: A aplicação foi de arrasta para cima!!!');
-                              throw Exception('API KEY não encontrada');
-                            }
-
-                            _getPolyline(
-                              establishment.latLng,
+                      ],
+                    ),
+                    child: TextButton.icon(
+                      onPressed: () {
+                        setState(
+                          () {
+                            establishment.isFavorite
+                                ? _firebaseUtils
+                                    .removeFavorite(establishment)
+                                    .then((_) {})
+                                : _firebaseUtils
+                                    .addFavorite(establishment)
+                                    .then((_) {});
+                            establishment.toggleFavorite();
+                            Marker updatedMarker = establishment.toMarker(
+                              () => _customInfoWindowController.addInfoWindow!(
+                                buildInfoWindow(establishment),
+                                establishment.latLng,
+                              ),
                             );
-
+                            _markers.removeWhere((marker) =>
+                                establishment.placesId ==
+                                marker.markerId.value);
+                            _markers.add(updatedMarker);
                             _customInfoWindowController.hideInfoWindow!();
                           },
-                        ),
-                      ),
-                    ],
+                        );
+                      },
+                      icon: establishment.isFavorite
+                          ? const Icon(Icons.star)
+                          : const Icon(Icons.star_border_outlined),
+                      label: establishment.isFavorite
+                          ? const Text('Favorito')
+                          : const Text('Favoritar'),
+                    ),
                   ),
                 ],
               ),
@@ -307,52 +233,6 @@ class LocationMapState extends State<LocationMap>
         ),
       ],
     );
-  }
-
-  _getPolyline(
-    LatLng destination,
-  ) async {
-    if (_lastMapPosition == null) {
-      return;
-    }
-
-    _controller.future.then(
-      (GoogleMapController controler) {
-        controler.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-          target: destination,
-          zoom: 18.0,
-        )));
-      },
-    );
-
-    final Directions? directions = await DirectionsRepository(dio: Dio())
-        .getRouteBetweenCoordinates(
-            origin: _lastMapPosition!, destination: destination);
-    debugPrint('directions => $directions');
-    if (directions == null) return;
-
-    setState(() {
-      _info = directions;
-      debugPrint('directions => ${_info!.polylinePoints}');
-      // _polylines.clear();
-      _polylines.add(
-        Polyline(
-          polylineId: const PolylineId('direction_polyline'),
-          color: Colors.indigoAccent,
-          width: 5,
-          points: _info!.polylinePoints
-              .map((e) => LatLng(e.latitude, e.longitude))
-              .toList(),
-        ),
-      );
-
-      _controller.future.then((GoogleMapController controler) {
-        controler.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-          target: _lastMapPosition!,
-          zoom: 18.0,
-        )));
-      });
-    });
   }
 
   Future<void> _getData() async {
@@ -435,10 +315,6 @@ class LocationMapState extends State<LocationMap>
       _lastMapPosition = widget.initialLocation;
       moveToLocation(_lastMapPosition!);
     }
-    //teste
-    _getPolyline(
-      const LatLng(-5.088753152055176, -42.81098924326597),
-    );
     super.initState();
   }
 
@@ -459,14 +335,18 @@ class LocationMapState extends State<LocationMap>
               zoom: 18,
             ),
             myLocationEnabled: true,
-            myLocationButtonEnabled: false,
+            myLocationButtonEnabled: true,
+            padding: const EdgeInsets.only(top: 640.0, left: 10.0),
+            compassEnabled: true,
+            rotateGesturesEnabled: true,
+            scrollGesturesEnabled: true,
+            tiltGesturesEnabled: true,
             style: _mapStyle,
             mapType: MapType.normal,
             zoomControlsEnabled: false,
             zoomGesturesEnabled: true,
             indoorViewEnabled: false,
             markers: Set<Marker>.of(_markers),
-            polylines: Set<Polyline>.of(_polylines),
             onCameraMove: _onCameraMove,
             onTap: (LatLng latLng) {
               _customInfoWindowController.hideInfoWindow!();
@@ -495,14 +375,14 @@ class LocationMapState extends State<LocationMap>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          requestPermission();
-        },
-        tooltip: 'Localização',
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.my_location),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     requestPermission();
+      //   },
+      //   tooltip: 'Localização',
+      //   backgroundColor: Colors.blue,
+      //   child: const Icon(Icons.my_location),
+      // ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: BottomAppBar(
         color: Colors.blue,

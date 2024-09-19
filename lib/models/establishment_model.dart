@@ -10,7 +10,6 @@ class EstablishmentModel {
   final String placesId;
   final List<String> types;
   late bool _isFavorite = false;
-  final List<String> photosReference;
   final List<String> photosUrl = [];
 
   void toggleFavorite() {
@@ -26,7 +25,6 @@ class EstablishmentModel {
     required this.icon,
     required this.placesId,
     required this.types,
-    required this.photosReference,
   });
 
   Map<String, dynamic> toMap() {
@@ -51,7 +49,6 @@ class EstablishmentModel {
       icon: map['icon'],
       placesId: map['placesId'],
       latLng: LatLng(map['lat'], map['lng']),
-      photosReference: List<String>.from(map['photos']),
     );
 
     if (isFavorite != null && isFavorite) {

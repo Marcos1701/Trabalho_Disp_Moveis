@@ -5,11 +5,13 @@ class CommentModel {
   final String placeId;
   final String comment;
   final String userId;
+  final String? userName;
 
   CommentModel({
     required this.placeId,
     required this.comment,
     required this.userId,
+    this.userName = 'Desconhecido',
   });
 
   Map<String, dynamic> toMap() {
@@ -17,6 +19,7 @@ class CommentModel {
       'placeId': placeId,
       'comment': comment,
       'userId': userId,
+      'userName': userName
     };
   }
 
@@ -25,6 +28,7 @@ class CommentModel {
       placeId: map['placeId'],
       comment: map['comment'],
       userId: map['userId'],
+      userName: map['userName'],
     );
   }
 }
