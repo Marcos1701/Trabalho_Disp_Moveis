@@ -1,5 +1,12 @@
 # trabalho_loc_ai
 
+## Integrantes
+- Marcos Eduardo de Neiva Santos
+- Daniel Luca dos Santos Silva
+- Gabriel Amaral Morais
+- Thiago Pessoa Medeiros
+
+
 A new Flutter project.
 
 ## Getting Started
